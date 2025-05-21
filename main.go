@@ -189,6 +189,8 @@ func main() {
         io.Copy(w, f)
     })
 
+    http.Handle("/", http.FileServer(http.Dir(".")))
+
     log.Println("Server listening on :8080")
     log.Fatal(http.ListenAndServe(":8080", nil))
 }

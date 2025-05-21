@@ -15,7 +15,9 @@ import (
 type Place struct {
     Name       string     `json:"name"`
     Coordinate Coordinate `json:"coordinate"`
+    CategoryID int        `json:"category_id"`
 }
+
 type Coordinate struct {
     Latitude  float64 `json:"latitude"`
     Longitude float64 `json:"longitude"`
@@ -112,14 +114,14 @@ func fetchAndSavePOIs(apiKey string, centerLat, centerLon float64, allowedCatego
         resp.Body.Close()
 
         for _, fsq := range fsqResp.Results {
-            hasAllowed := false
+            matchedCategoryID := 0
             for _, cat := range fsq.Categories {
                 if _, ok := allowedCategoryIDs[cat.ID]; ok {
-                    hasAllowed = true
+                    matchedCategoryID = cat.ID // Save the first allowed category ID
                     break
                 }
             }
-            if !hasAllowed {
+            if matchedCategoryID == 0 {
                 continue
             }
             key := fmt.Sprintf("%s|%.6f|%.6f", fsq.Name, fsq.Geocodes.Main.Latitude, fsq.Geocodes.Main.Longitude)
@@ -133,6 +135,7 @@ func fetchAndSavePOIs(apiKey string, centerLat, centerLon float64, allowedCatego
                     Latitude:  fsq.Geocodes.Main.Latitude,
                     Longitude: fsq.Geocodes.Main.Longitude,
                 },
+                CategoryID: matchedCategoryID,
             })
         }
         if fsqResp.Context.NextCursor == "" {

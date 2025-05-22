@@ -1,6 +1,7 @@
 package main
 
 import (
+	"AppDevelopmentAPI/websocket"
 	"bytes"
 	"encoding/csv"
 	"encoding/json"
@@ -14,6 +15,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Place struct {
@@ -51,6 +53,23 @@ type Question struct {
 type Quiz struct {
 	PlaceID   string     `json:"place_id"`
 	Questions []Question `json:"questions"`
+}
+type UpdateMessage struct {
+	Status string `json:"status"`
+	Time   string `json:"time"`
+	Source string `json:"source"`
+}
+
+func sendUpdate(update UpdateMessage) {
+
+	jsonMsg, err := json.Marshal(update)
+	if err != nil {
+		log.Println("JSON marshal error:", err)
+		return
+	}
+
+	websocket.Broadcast <- jsonMsg
+
 }
 
 func loadAllowedCategoryIDs(path string) (map[int]string, error) {
@@ -267,6 +286,17 @@ func createPlace(w http.ResponseWriter, r *http.Request) {
 
 	places = append(places, newPlace)
 
+	update := UpdateMessage{
+
+		Status: "updated",
+		Time:   time.Now().Format(time.RFC3339),
+		Source: "Places",
+	}
+
+	sendUpdate(update)
+
+	fmt.Println("New place added")
+
 	data, err := json.MarshalIndent(places, "", "  ")
 	if err != nil {
 		http.Error(w, "Error preparing response", http.StatusInternalServerError)
@@ -350,6 +380,10 @@ func main() {
 	http.HandleFunc("/api/places", createPlace)
 
 	http.Handle("/", http.FileServer(http.Dir(".")))
+
+	go websocket.HandleMessages()
+
+	http.HandleFunc("/ws", websocket.WebSocketHandler)
 
 	log.Println("Server listening on :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))

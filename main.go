@@ -1,11 +1,14 @@
 package main
 
 import (
+	"AppDevelopmentAPI/db"
+	"AppDevelopmentAPI/profiles/handlers"
 	"AppDevelopmentAPI/websocket"
 	"bytes"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"io"
 	"io/ioutil"
@@ -58,6 +61,13 @@ type UpdateMessage struct {
 	Status string `json:"status"`
 	Time   string `json:"time"`
 	Source string `json:"source"`
+}
+
+func init() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("No .env file found. Using environment variables instead.")
+	}
 }
 
 func sendUpdate(update UpdateMessage) {
@@ -314,6 +324,16 @@ func createPlace(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+
+	// With gin
+
+	db.ConnectGorm()
+
+	r := gin.Default()
+
+	r.GET("/users", handlers.GetUsers)
+	r.POST("/users", handlers.CreateUser)
+
 	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file")
 	}

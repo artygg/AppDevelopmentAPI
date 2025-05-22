@@ -1,0 +1,13 @@
+### GET request to example server
+POST localhost:8080/api/places
+Content-Type: application/json
+
+{
+"name": "Flamingo's Plaza Wokrestaurantasdasdadsadsadsdasdasd",
+"coordinate": {
+"latitude": 52.782527,
+"longitude": 6.8971
+},
+"category_id": 10008
+}
+###

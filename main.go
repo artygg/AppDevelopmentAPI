@@ -1,10 +1,7 @@
 package main
 
 import (
-    "AppDevelopmentAPI/websocket"
-    "bytes"
     "database/sql"
-    "encoding/csv"
     "encoding/json"
     "fmt"
     "github.com/joho/godotenv"
@@ -13,9 +10,9 @@ import (
     "log"
     "net/http"
     "os"
-    "strconv"
-    "strings"
+    "bytes"
     "time"
+    "AppDevelopmentAPI/websocket"
 )
 
 type Place struct {

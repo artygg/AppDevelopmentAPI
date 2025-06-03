@@ -1,6 +1,8 @@
 package main
 
 import (
+    "AppDevelopmentAPI/websocket"
+    "bytes"
     "database/sql"
     "encoding/json"
     "fmt"
@@ -10,9 +12,7 @@ import (
     "log"
     "net/http"
     "os"
-    "bytes"
     "time"
-    "AppDevelopmentAPI/websocket"
 )
 
 type Place struct {
@@ -24,20 +24,23 @@ type Place struct {
     Captured     bool     `json:"captured"`
     UserCaptured *string  `json:"user_captured"`
 }
+
 type Question struct {
     Text    string   `json:"text"`
     Options []string `json:"options"`
     Answer  int      `json:"answer"`
 }
+
 type Quiz struct {
     PlaceID   int        `json:"place_id"`
     Questions []Question `json:"questions"`
 }
+
 type UpdateMessage struct {
-    Status string `json:"status"`
-    Time   string `json:"time"`
-    Source string `json:"source"`
-    PlaceID int   `json:"place_id,omitempty"`
+    Status    string `json:"status"`
+    Time      string `json:"time"`
+    Source    string `json:"source"`
+    PlaceID   int    `json:"place_id,omitempty"`
     PlaceName string `json:"place_name,omitempty"`
 }
 
@@ -87,8 +90,8 @@ func getAllPlaces(db *sql.DB) ([]Place, error) {
     return places, nil
 }
 
-func getPlaceByName(db *sql.DB, name string) (*Place, error) {
-    row := db.QueryRow("SELECT id, name, latitude, longitude, category_id, captured, user_captured FROM places WHERE name = $1 LIMIT 1", name)
+func getPlaceByID(db *sql.DB, id int) (*Place, error) {
+    row := db.QueryRow("SELECT id, name, latitude, longitude, category_id, captured, user_captured FROM places WHERE id = $1 LIMIT 1", id)
     var p Place
     var userCaptured sql.NullString
     err := row.Scan(&p.ID, &p.Name, &p.Latitude, &p.Longitude, &p.CategoryID, &p.Captured, &userCaptured)
@@ -101,8 +104,8 @@ func getPlaceByName(db *sql.DB, name string) (*Place, error) {
     return &p, nil
 }
 
-func getPlaceByID(db *sql.DB, id int) (*Place, error) {
-    row := db.QueryRow("SELECT id, name, latitude, longitude, category_id, captured, user_captured FROM places WHERE id = $1 LIMIT 1", id)
+func getPlaceByName(db *sql.DB, name string) (*Place, error) {
+    row := db.QueryRow("SELECT id, name, latitude, longitude, category_id, captured, user_captured FROM places WHERE name = $1 LIMIT 1", name)
     var p Place
     var userCaptured sql.NullString
     err := row.Scan(&p.ID, &p.Name, &p.Latitude, &p.Longitude, &p.CategoryID, &p.Captured, &userCaptured)
@@ -139,8 +142,6 @@ func storeQuizForPlace(db *sql.DB, placeID int, quiz Quiz) error {
     return err
 }
 
-// --- Web endpoints ---
-
 func placesHandler(db *sql.DB) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
         w.Header().Set("Content-Type", "application/json")
@@ -153,16 +154,63 @@ func placesHandler(db *sql.DB) http.HandlerFunc {
     }
 }
 
+func iconLookupHandler(db *sql.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        w.Header().Set("Content-Type", "application/json")
+        catID := r.URL.Query().Get("category_id")
+        if catID == "" {
+            http.Error(w, "Missing category_id", http.StatusBadRequest)
+            return
+        }
+        var iconName string
+        err := db.QueryRow("SELECT icon_name FROM category_icons WHERE category_id = $1", catID).Scan(&iconName)
+        if err != nil {
+            http.Error(w, "Icon not found", http.StatusNotFound)
+            return
+        }
+        json.NewEncoder(w).Encode(iconName)
+    }
+}
+
+func categoryIconsHandler(db *sql.DB) http.HandlerFunc {
+    return func(w http.ResponseWriter, r *http.Request) {
+        w.Header().Set("Content-Type", "application/json")
+        rows, err := db.Query("SELECT category_id, icon_name FROM category_icons")
+        if err != nil {
+            http.Error(w, "Failed to load category icons", http.StatusInternalServerError)
+            return
+        }
+        defer rows.Close()
+        icons := make(map[string]string)
+        for rows.Next() {
+            var id int
+            var name string
+            if err := rows.Scan(&id, &name); err != nil {
+                continue
+            }
+            icons[fmt.Sprintf("%d", id)] = name
+        }
+        json.NewEncoder(w).Encode(icons)
+    }
+}
+
 func quizHandler(db *sql.DB, openaiKey string) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
         w.Header().Set("Content-Type", "application/json")
+        placeIDParam := r.URL.Query().Get("place_id")
         placeName := r.URL.Query().Get("place")
-        if placeName == "" {
-            http.Error(w, "Missing place parameter", http.StatusBadRequest)
-            return
+        var place *Place
+        var err error
+        if placeIDParam != "" {
+            var pid int
+            _, err = fmt.Sscanf(placeIDParam, "%d", &pid)
+            if err == nil {
+                place, err = getPlaceByID(db, pid)
+            }
+        } else if placeName != "" {
+            place, err = getPlaceByName(db, placeName)
         }
-        place, err := getPlaceByName(db, placeName)
-        if err != nil {
+        if err != nil || place == nil {
             http.Error(w, "Place not found", http.StatusNotFound)
             return
         }
@@ -176,8 +224,16 @@ func quizHandler(db *sql.DB, openaiKey string) http.HandlerFunc {
             http.Error(w, "Failed to generate quiz", http.StatusInternalServerError)
             return
         }
+        // Extra check: always 7 questions
+        if len(questions) != 7 {
+            http.Error(w, "Quiz generation failed: not 7 questions", http.StatusInternalServerError)
+            return
+        }
         newQuiz := Quiz{PlaceID: place.ID, Questions: questions}
-        _ = storeQuizForPlace(db, place.ID, newQuiz)
+        if err := storeQuizForPlace(db, place.ID, newQuiz); err != nil {
+            http.Error(w, "Failed to save quiz", http.StatusInternalServerError)
+            return
+        }
         json.NewEncoder(w).Encode(newQuiz)
     }
 }
@@ -203,10 +259,10 @@ func createPlaceHandler(db *sql.DB) http.HandlerFunc {
             return
         }
         update := UpdateMessage{
-            Status: "added",
-            Time:   time.Now().Format(time.RFC3339),
-            Source: "Places",
-            PlaceID: id,
+            Status:    "added",
+            Time:      time.Now().Format(time.RFC3339),
+            Source:    "Places",
+            PlaceID:   id,
             PlaceName: newPlace.Name,
         }
         sendUpdate(update)
@@ -217,7 +273,6 @@ func createPlaceHandler(db *sql.DB) http.HandlerFunc {
     }
 }
 
-// --- Capture/Update logic (via POST for marking places captured) ---
 func capturePlaceHandler(db *sql.DB) http.HandlerFunc {
     return func(w http.ResponseWriter, r *http.Request) {
         if r.Method != http.MethodPost {
@@ -232,20 +287,17 @@ func capturePlaceHandler(db *sql.DB) http.HandlerFunc {
             http.Error(w, "Invalid request body", http.StatusBadRequest)
             return
         }
-        // Update DB
         _, err := db.Exec("UPDATE places SET captured = TRUE, user_captured = $1 WHERE id = $2", req.User, req.PlaceID)
         if err != nil {
             http.Error(w, "Failed to update place", http.StatusInternalServerError)
             return
         }
-        // Optionally fetch updated place
         updated, _ := getPlaceByID(db, req.PlaceID)
-        // Send websocket update!
         update := UpdateMessage{
-            Status: "captured",
-            Time:   time.Now().Format(time.RFC3339),
-            Source: "Capture",
-            PlaceID: req.PlaceID,
+            Status:    "captured",
+            Time:      time.Now().Format(time.RFC3339),
+            Source:    "Capture",
+            PlaceID:   req.PlaceID,
             PlaceName: updated.Name,
         }
         sendUpdate(update)
@@ -254,24 +306,28 @@ func capturePlaceHandler(db *sql.DB) http.HandlerFunc {
     }
 }
 
-// --- Quiz Generation ---
 func generateQuizForPlace(name string, lat, lon float64, apiKey string) ([]Question, error) {
     prompt := fmt.Sprintf(`
-    You are generating a quiz for a location-based mobile game.
-    This quiz must be about the real-world place named "%s" located at latitude %.6f, longitude %.6f.
-    There may be other places with the same name, but this quiz should be specific to the location at these coordinates.
-    Use all information you can (such as city, country, nearby landmarks, or known facts) to make the first 3 questions about this place, or the city/region it is in.
-    If information about the place itself is limited, use questions about the city or area where the place is located.
-    Only if you cannot generate more, fill with general easy knowledge questions.
-    Each question must be an object with:
-      - a non-empty "text" field (the question in English)
-      - an "options" field: 4 possible answers
-      - an "answer" field: the 0-based index of the correct answer in "options"
-    NEVER use the field "question", only "text".
-    Do not use markdown or explanation, just respond with a JSON array.
-    If any "text" value is empty, regenerate it with a real question in English.
-    Return ONLY valid JSON, not markdown.
-    `, name, lat, lon)
+You are generating a quiz for a location-based mobile game.
+Generate exactly 7 questions in total and return them as a JSON array.
+The quiz must be about the real-world place named "%s" located at latitude %.6f, longitude %.6f.
+The first 3 questions must be about this place (city, facts, what it's known for, location, etc).
+The remaining 4 questions can be about the city, area, or general knowledge if you run out of info.
+Each question must be an object with:
+  - a non-empty "text" field (the question in English)
+  - an "options" field: 4 possible answers
+  - an "answer" field: the 0-based index of the correct answer in "options"
+Do NOT use the field "question", only "text".
+Do NOT use markdown, code blocks, or explanations.
+Respond with ONLY a valid JSON array, for example:
+[
+  {"text": "What is the capital of France?", "options": ["Paris","Berlin","Rome","Madrid"], "answer":0},
+  ...
+]
+If any "text" value is empty, regenerate the question.
+Return ONLY valid JSON, not markdown or code blocks.
+`, name, lat, lon)
+
     requestBody := map[string]interface{}{
         "model": "gpt-3.5-turbo",
         "messages": []map[string]string{
@@ -330,7 +386,8 @@ func main() {
     http.HandleFunc("/quiz", quizHandler(db, openaiKey))
     http.HandleFunc("/api/places", createPlaceHandler(db))
     http.HandleFunc("/api/capture", capturePlaceHandler(db))
-
+    http.HandleFunc("/icon", iconLookupHandler(db))
+    http.HandleFunc("/category_icons.json", categoryIconsHandler(db))
     http.Handle("/", http.FileServer(http.Dir(".")))
 
     go websocket.HandleMessages()

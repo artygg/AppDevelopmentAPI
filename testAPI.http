@@ -11,3 +11,8 @@ Content-Type: application/json
 "category_id": 10008
 }
 ###
+
+POST http://localhost:8080/places
+
+
+###

@@ -90,6 +90,11 @@ func getAllPlaces(db *sql.DB) ([]Place, error) {
 	return places, nil
 }
 
+func pingHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("pong 🏓"))
+}
+
 func getPlaceByID(db *sql.DB, id int) (*Place, error) {
 	row := db.QueryRow("SELECT id, name, latitude, longitude, category_id, captured, user_captured FROM places WHERE id = $1 LIMIT 1", id)
 	var p Place
@@ -389,10 +394,12 @@ func main() {
 	http.HandleFunc("/icon", iconLookupHandler(db))
 	http.HandleFunc("/category_icons.json", categoryIconsHandler(db))
 	http.Handle("/", http.FileServer(http.Dir(".")))
+	http.HandleFunc("/upload-file", UploadImageHandler)
+	http.HandleFunc("/ping", pingHandler)
 
 	go websocket.HandleMessages()
 	http.HandleFunc("/ws", websocket.WebSocketHandler)
 
-	log.Println("Server listening on :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Println("Server listening on 0.0.0.0:8080")
+	log.Fatal(http.ListenAndServe("0.0.0.0:8080", nil))
 }

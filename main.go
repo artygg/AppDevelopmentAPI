@@ -60,6 +60,7 @@ func dbConnect() *sql.DB {
 }
 
 func sendUpdate(update UpdateMessage) {
+	log.Println("update is sent: ", update)
 	jsonMsg, err := json.Marshal(update)
 	if err != nil {
 		log.Println("JSON marshal error:", err)

@@ -389,7 +389,9 @@ func main() {
 	http.HandleFunc("/icon", iconLookupHandler(db))
 	http.HandleFunc("/category_icons.json", categoryIconsHandler(db))
 	http.Handle("/", http.FileServer(http.Dir(".")))
-	http.HandleFunc("/upload-file", UploadImageHandler)
+
+	http.HandleFunc("/upload-file", UploadImageHandler(db))
+	http.HandleFunc("/get-image", GetImageByPlaceIDHandler(db))
 
 	go websocket.HandleMessages()
 	http.HandleFunc("/ws", websocket.WebSocketHandler)

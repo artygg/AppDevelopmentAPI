@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="SqlDataSourceStorage">
+    <option name="dataSources">
+      <list>
+        <State>
+          <option name="id" value="3a5c6963-1868-4fd6-980f-d8e83a7ca4fa" />
+          <option name="name" value="AppDevDatabase (DDL)" />
+          <option name="dbmsName" value="POSTGRES" />
+          <option name="urls">
+            <array />
+          </option>
+          <option name="outLayout" value="File per object by schema.groovy" />
+        </State>
+        <State>
+          <option name="id" value="700927d2-e60c-4644-b0d5-2c153fc307a1" />
+          <option name="name" value="AppDevDatabase (DDL) ASDAS" />
+          <option name="dbmsName" value="POSTGRES" />
+          <option name="urls">
+            <array />
+          </option>
+          <option name="outLayout" value="File per object by schema.groovy" />
+        </State>
+      </list>
+    </option>
+  </component>
+</project>

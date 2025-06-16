@@ -1,9 +1,96 @@
 --
+-- PostgreSQL database cluster dump
+--
+
+SET default_transaction_read_only = off;
+
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+
+--
+-- Roles
+--
+
+CREATE ROLE postgres;
+ALTER ROLE postgres WITH SUPERUSER INHERIT CREATEROLE CREATEDB LOGIN REPLICATION BYPASSRLS PASSWORD 'SCRAM-SHA-256$4096:r6Dzc1MunzU/wV4L/2bZiA==$rKQTSkvRWKphn/d69Zcw9RF+uBw+7mGah2dz1y95NWk=:ZPphgBvnp3xyI7P7CYVaqxHf5+RJbuUsjEQyySrWInk=';
+
+--
+-- User Configurations
+--
+
+
+
+
+
+
+
+
+--
+-- Databases
+--
+
+--
+-- Database "template1" dump
+--
+
+\connect template1
+
+--
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 17.4 (Debian 17.4-1.pgdg120+2)
--- Dumped by pg_dump version 17.4 (Debian 17.4-1.pgdg120+2)
+-- Dumped from database version 17.5 (Debian 17.5-1.pgdg120+1)
+-- Dumped by pg_dump version 17.5 (Debian 17.5-1.pgdg120+1)
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- PostgreSQL database dump complete
+--
+
+--
+-- Database "AppDev" dump
+--
+
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 17.5 (Debian 17.5-1.pgdg120+1)
+-- Dumped by pg_dump version 17.5 (Debian 17.5-1.pgdg120+1)
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- Name: AppDev; Type: DATABASE; Schema: -; Owner: postgres
+--
+
+CREATE DATABASE "AppDev" WITH TEMPLATE = template0 ENCODING = 'UTF8' LOCALE_PROVIDER = libc LOCALE = 'en_US.utf8';
+
+
+ALTER DATABASE "AppDev" OWNER TO postgres;
+
+\connect "AppDev"
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -32,6 +119,34 @@ CREATE TABLE public.category_icons (
 
 
 ALTER TABLE public.category_icons OWNER TO postgres;
+
+--
+-- Name: image_place; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.image_place (
+    id integer NOT NULL,
+    image_location text,
+    place_id integer,
+    last_time_updated timestamp without time zone
+);
+
+
+ALTER TABLE public.image_place OWNER TO postgres;
+
+--
+-- Name: image_place_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.image_place ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.image_place_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
 
 --
 -- Name: places; Type: TABLE; Schema: public; Owner: postgres
@@ -544,6 +659,17 @@ COPY public.category_icons (category_id, icon_name) FROM stdin;
 
 
 --
+-- Data for Name: image_place; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.image_place (id, image_location, place_id, last_time_updated) FROM stdin;
+4	images/20250616_154848_photo_5327829827891361653_x.jpg	2	2025-06-16 15:48:48.866107
+5	images/20250616_154901_photo_5327829827891361653_x.jpg	4	2025-06-16 15:49:01.719316
+1	images/20250616_192643_photo.jpg	1	2025-06-16 19:26:43.780708
+\.
+
+
+--
 -- Data for Name: places; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -582,6 +708,7 @@ COPY public.places (id, name, latitude, longitude, category_id, captured, user_c
 32	Roundabout	52.77443236693949	6.9266169173208025	7	f	\N
 33	KIGDOM	52.78164658722868	6.938662737451782	2	f	\N
 34	Сральник	52.779696089101655	6.922779386251341	6	f	\N
+35	Test 	52.77269752118785	6.900077880431531	1	f	\N
 \.
 
 
@@ -595,10 +722,17 @@ COPY public.quizzes (id, place_id, quiz_json) FROM stdin;
 
 
 --
+-- Name: image_place_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.image_place_id_seq', 16, true);
+
+
+--
 -- Name: places_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.places_id_seq', 34, true);
+SELECT pg_catalog.setval('public.places_id_seq', 35, true);
 
 
 --
@@ -614,6 +748,22 @@ SELECT pg_catalog.setval('public.quizzes_id_seq', 1, true);
 
 ALTER TABLE ONLY public.category_icons
     ADD CONSTRAINT category_icons_pkey PRIMARY KEY (category_id);
+
+
+--
+-- Name: image_place image_place_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.image_place
+    ADD CONSTRAINT image_place_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: image_place image_place_place_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.image_place
+    ADD CONSTRAINT image_place_place_id_key UNIQUE (place_id);
 
 
 --
@@ -641,6 +791,14 @@ ALTER TABLE ONLY public.quizzes
 
 
 --
+-- Name: image_place image_place_place_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.image_place
+    ADD CONSTRAINT image_place_place_id_fkey FOREIGN KEY (place_id) REFERENCES public.places(id);
+
+
+--
 -- Name: quizzes quizzes_place_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -658,5 +816,38 @@ GRANT ALL ON SCHEMA public TO PUBLIC;
 
 --
 -- PostgreSQL database dump complete
+--
+
+--
+-- Database "postgres" dump
+--
+
+\connect postgres
+
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 17.5 (Debian 17.5-1.pgdg120+1)
+-- Dumped by pg_dump version 17.5 (Debian 17.5-1.pgdg120+1)
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET transaction_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+--
+-- PostgreSQL database dump complete
+--
+
+--
+-- PostgreSQL database cluster dump complete
 --
 

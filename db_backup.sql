@@ -1,96 +1,11 @@
 --
--- PostgreSQL database cluster dump
---
-
-SET default_transaction_read_only = off;
-
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-
---
--- Roles
---
-
-CREATE ROLE postgres;
-ALTER ROLE postgres WITH SUPERUSER INHERIT CREATEROLE CREATEDB LOGIN REPLICATION BYPASSRLS PASSWORD 'SCRAM-SHA-256$4096:r6Dzc1MunzU/wV4L/2bZiA==$rKQTSkvRWKphn/d69Zcw9RF+uBw+7mGah2dz1y95NWk=:ZPphgBvnp3xyI7P7CYVaqxHf5+RJbuUsjEQyySrWInk=';
-
---
--- User Configurations
---
-
-
-
-
-
-
-
-
---
--- Databases
---
-
---
--- Database "template1" dump
---
-
-\connect template1
-
---
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 17.5 (Debian 17.5-1.pgdg120+1)
--- Dumped by pg_dump version 17.5 (Debian 17.5-1.pgdg120+1)
+-- Dumped from database version 17.5 (Homebrew)
+-- Dumped by pg_dump version 17.5
 
-SET statement_timeout = 0;
-SET lock_timeout = 0;
-SET idle_in_transaction_session_timeout = 0;
-SET transaction_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-SELECT pg_catalog.set_config('search_path', '', false);
-SET check_function_bodies = false;
-SET xmloption = content;
-SET client_min_messages = warning;
-SET row_security = off;
-
---
--- PostgreSQL database dump complete
---
-
---
--- Database "AppDev" dump
---
-
---
--- PostgreSQL database dump
---
-
--- Dumped from database version 17.5 (Debian 17.5-1.pgdg120+1)
--- Dumped by pg_dump version 17.5 (Debian 17.5-1.pgdg120+1)
-
-SET statement_timeout = 0;
-SET lock_timeout = 0;
-SET idle_in_transaction_session_timeout = 0;
-SET transaction_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-SELECT pg_catalog.set_config('search_path', '', false);
-SET check_function_bodies = false;
-SET xmloption = content;
-SET client_min_messages = warning;
-SET row_security = off;
-
---
--- Name: AppDev; Type: DATABASE; Schema: -; Owner: postgres
---
-
-CREATE DATABASE "AppDev" WITH TEMPLATE = template0 ENCODING = 'UTF8' LOCALE_PROVIDER = libc LOCALE = 'en_US.utf8';
-
-
-ALTER DATABASE "AppDev" OWNER TO postgres;
-
-\connect "AppDev"
+-- Started on 2025-06-17 23:00:17 CEST
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -109,6 +24,57 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
+-- TOC entry 225 (class 1259 OID 16437)
+-- Name: capture_attempts; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.capture_attempts (
+    id integer NOT NULL,
+    place_id integer NOT NULL,
+    user_name text NOT NULL,
+    correct boolean DEFAULT false NOT NULL,
+    time_ms integer NOT NULL,
+    finished_at timestamp without time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.capture_attempts OWNER TO postgres;
+
+--
+-- TOC entry 3770 (class 0 OID 0)
+-- Dependencies: 225
+-- Name: TABLE capture_attempts; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON TABLE public.capture_attempts IS 'Результаты прохождения викторины (одно место - одна попытка).';
+
+
+--
+-- TOC entry 3771 (class 0 OID 0)
+-- Dependencies: 225
+-- Name: COLUMN capture_attempts.time_ms; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.capture_attempts.time_ms IS 'Сколько миллисекунд понадобилось пройти викторину.';
+
+
+--
+-- TOC entry 224 (class 1259 OID 16436)
+-- Name: capture_attempts_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+ALTER TABLE public.capture_attempts ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY (
+    SEQUENCE NAME public.capture_attempts_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1
+);
+
+
+--
+-- TOC entry 217 (class 1259 OID 16390)
 -- Name: category_icons; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -121,6 +87,7 @@ CREATE TABLE public.category_icons (
 ALTER TABLE public.category_icons OWNER TO postgres;
 
 --
+-- TOC entry 218 (class 1259 OID 16393)
 -- Name: image_place; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -135,6 +102,7 @@ CREATE TABLE public.image_place (
 ALTER TABLE public.image_place OWNER TO postgres;
 
 --
+-- TOC entry 219 (class 1259 OID 16398)
 -- Name: image_place_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -149,6 +117,73 @@ ALTER TABLE public.image_place ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY 
 
 
 --
+-- TOC entry 226 (class 1259 OID 16451)
+-- Name: mines; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.mines (
+    place_id integer NOT NULL,
+    qid integer NOT NULL,
+    expires_at timestamp without time zone NOT NULL
+);
+
+
+ALTER TABLE public.mines OWNER TO postgres;
+
+--
+-- TOC entry 3772 (class 0 OID 0)
+-- Dependencies: 226
+-- Name: TABLE mines; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON TABLE public.mines IS 'Активные «мины» (блокировки вопросов) по местам';
+
+
+--
+-- TOC entry 227 (class 1259 OID 16466)
+-- Name: place_scores; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.place_scores (
+    place_id integer NOT NULL,
+    best_correct smallint DEFAULT 0 NOT NULL,
+    best_time_ms integer DEFAULT 2147483647 NOT NULL,
+    holder text,
+    updated_at timestamp without time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.place_scores OWNER TO postgres;
+
+--
+-- TOC entry 3773 (class 0 OID 0)
+-- Dependencies: 227
+-- Name: TABLE place_scores; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON TABLE public.place_scores IS 'Лучший результат (accuracy + время) по каждому месту.';
+
+
+--
+-- TOC entry 3774 (class 0 OID 0)
+-- Dependencies: 227
+-- Name: COLUMN place_scores.best_correct; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.place_scores.best_correct IS 'Максимальное количество правильных ответов для данного места.';
+
+
+--
+-- TOC entry 3775 (class 0 OID 0)
+-- Dependencies: 227
+-- Name: COLUMN place_scores.best_time_ms; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.place_scores.best_time_ms IS 'Минимальное время (мс), за которое достигнут best_correct.';
+
+
+--
+-- TOC entry 220 (class 1259 OID 16399)
 -- Name: places; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -166,6 +201,7 @@ CREATE TABLE public.places (
 ALTER TABLE public.places OWNER TO postgres;
 
 --
+-- TOC entry 221 (class 1259 OID 16405)
 -- Name: places_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -181,6 +217,8 @@ CREATE SEQUENCE public.places_id_seq
 ALTER SEQUENCE public.places_id_seq OWNER TO postgres;
 
 --
+-- TOC entry 3776 (class 0 OID 0)
+-- Dependencies: 221
 -- Name: places_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -188,19 +226,22 @@ ALTER SEQUENCE public.places_id_seq OWNED BY public.places.id;
 
 
 --
+-- TOC entry 222 (class 1259 OID 16406)
 -- Name: quizzes; Type: TABLE; Schema: public; Owner: postgres
 --
 
 CREATE TABLE public.quizzes (
     id integer NOT NULL,
     place_id integer,
-    quiz_json jsonb NOT NULL
+    quiz_json jsonb NOT NULL,
+    updated_at timestamp without time zone DEFAULT now() NOT NULL
 );
 
 
 ALTER TABLE public.quizzes OWNER TO postgres;
 
 --
+-- TOC entry 223 (class 1259 OID 16411)
 -- Name: quizzes_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -216,6 +257,8 @@ CREATE SEQUENCE public.quizzes_id_seq
 ALTER SEQUENCE public.quizzes_id_seq OWNER TO postgres;
 
 --
+-- TOC entry 3777 (class 0 OID 0)
+-- Dependencies: 223
 -- Name: quizzes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
@@ -223,6 +266,7 @@ ALTER SEQUENCE public.quizzes_id_seq OWNED BY public.quizzes.id;
 
 
 --
+-- TOC entry 3575 (class 2604 OID 16412)
 -- Name: places id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -230,6 +274,7 @@ ALTER TABLE ONLY public.places ALTER COLUMN id SET DEFAULT nextval('public.place
 
 
 --
+-- TOC entry 3577 (class 2604 OID 16413)
 -- Name: quizzes id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -237,6 +282,18 @@ ALTER TABLE ONLY public.quizzes ALTER COLUMN id SET DEFAULT nextval('public.quiz
 
 
 --
+-- TOC entry 3761 (class 0 OID 16437)
+-- Dependencies: 225
+-- Data for Name: capture_attempts; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.capture_attempts (id, place_id, user_name, correct, time_ms, finished_at) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3753 (class 0 OID 16390)
+-- Dependencies: 217
 -- Data for Name: category_icons; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -659,6 +716,8 @@ COPY public.category_icons (category_id, icon_name) FROM stdin;
 
 
 --
+-- TOC entry 3754 (class 0 OID 16393)
+-- Dependencies: 218
 -- Data for Name: image_place; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -670,6 +729,28 @@ COPY public.image_place (id, image_location, place_id, last_time_updated) FROM s
 
 
 --
+-- TOC entry 3762 (class 0 OID 16451)
+-- Dependencies: 226
+-- Data for Name: mines; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.mines (place_id, qid, expires_at) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3763 (class 0 OID 16466)
+-- Dependencies: 227
+-- Data for Name: place_scores; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.place_scores (place_id, best_correct, best_time_ms, holder, updated_at) FROM stdin;
+\.
+
+
+--
+-- TOC entry 3756 (class 0 OID 16399)
+-- Dependencies: 220
 -- Data for Name: places; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -713,15 +794,28 @@ COPY public.places (id, name, latitude, longitude, category_id, captured, user_c
 
 
 --
+-- TOC entry 3758 (class 0 OID 16406)
+-- Dependencies: 222
 -- Data for Name: quizzes; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.quizzes (id, place_id, quiz_json) FROM stdin;
-1	5	{"place_id": 5, "questions": [{"text": "Where is Rimbula River located?", "answer": 2, "options": ["Australia", "Brazil", "Netherlands", "Canada"]}, {"text": "What type of animals are commonly found around Rimbula River?", "answer": 1, "options": ["Lions", "Crocodiles", "Penguins", "Elephants"]}, {"text": "What is Rimbula River known for?", "answer": 1, "options": ["Historic landmarks", "Rich biodiversity", "Modern architecture", "Culinary delights"]}, {"text": "Which of the following is a common Dutch dish?", "answer": 2, "options": ["Sushi", "Tacos", "Stroopwafel", "Pasta"]}, {"text": "What is the capital city of the Netherlands?", "answer": 0, "options": ["Amsterdam", "Berlin", "Paris", "London"]}, {"text": "Which famous Dutch painter is known for his sunflower paintings?", "answer": 0, "options": ["Vincent van Gogh", "Pablo Picasso", "Leonardo da Vinci", "Claude Monet"]}, {"text": "What is the currency of the Netherlands?", "answer": 1, "options": ["Pound", "Euro", "Dollar", "Yen"]}]}
+COPY public.quizzes (id, place_id, quiz_json, updated_at) FROM stdin;
+1	5	{"place_id": 5, "questions": [{"text": "Where is Rimbula River located?", "answer": 2, "options": ["Australia", "Brazil", "Netherlands", "Canada"]}, {"text": "What type of animals are commonly found around Rimbula River?", "answer": 1, "options": ["Lions", "Crocodiles", "Penguins", "Elephants"]}, {"text": "What is Rimbula River known for?", "answer": 1, "options": ["Historic landmarks", "Rich biodiversity", "Modern architecture", "Culinary delights"]}, {"text": "Which of the following is a common Dutch dish?", "answer": 2, "options": ["Sushi", "Tacos", "Stroopwafel", "Pasta"]}, {"text": "What is the capital city of the Netherlands?", "answer": 0, "options": ["Amsterdam", "Berlin", "Paris", "London"]}, {"text": "Which famous Dutch painter is known for his sunflower paintings?", "answer": 0, "options": ["Vincent van Gogh", "Pablo Picasso", "Leonardo da Vinci", "Claude Monet"]}, {"text": "What is the currency of the Netherlands?", "answer": 1, "options": ["Pound", "Euro", "Dollar", "Yen"]}]}	2025-06-17 22:59:37.000615
 \.
 
 
 --
+-- TOC entry 3778 (class 0 OID 0)
+-- Dependencies: 224
+-- Name: capture_attempts_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.capture_attempts_id_seq', 1, false);
+
+
+--
+-- TOC entry 3779 (class 0 OID 0)
+-- Dependencies: 219
 -- Name: image_place_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -729,6 +823,8 @@ SELECT pg_catalog.setval('public.image_place_id_seq', 16, true);
 
 
 --
+-- TOC entry 3780 (class 0 OID 0)
+-- Dependencies: 221
 -- Name: places_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -736,6 +832,8 @@ SELECT pg_catalog.setval('public.places_id_seq', 35, true);
 
 
 --
+-- TOC entry 3781 (class 0 OID 0)
+-- Dependencies: 223
 -- Name: quizzes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -743,6 +841,16 @@ SELECT pg_catalog.setval('public.quizzes_id_seq', 1, true);
 
 
 --
+-- TOC entry 3597 (class 2606 OID 16445)
+-- Name: capture_attempts capture_attempts_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.capture_attempts
+    ADD CONSTRAINT capture_attempts_pkey PRIMARY KEY (id);
+
+
+--
+-- TOC entry 3585 (class 2606 OID 16415)
 -- Name: category_icons category_icons_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -751,6 +859,7 @@ ALTER TABLE ONLY public.category_icons
 
 
 --
+-- TOC entry 3587 (class 2606 OID 16417)
 -- Name: image_place image_place_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -759,6 +868,7 @@ ALTER TABLE ONLY public.image_place
 
 
 --
+-- TOC entry 3589 (class 2606 OID 16419)
 -- Name: image_place image_place_place_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -767,6 +877,25 @@ ALTER TABLE ONLY public.image_place
 
 
 --
+-- TOC entry 3599 (class 2606 OID 16455)
+-- Name: mines mines_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.mines
+    ADD CONSTRAINT mines_pkey PRIMARY KEY (place_id, qid);
+
+
+--
+-- TOC entry 3601 (class 2606 OID 16475)
+-- Name: place_scores place_scores_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.place_scores
+    ADD CONSTRAINT place_scores_pkey PRIMARY KEY (place_id);
+
+
+--
+-- TOC entry 3591 (class 2606 OID 16421)
 -- Name: places places_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -775,6 +904,7 @@ ALTER TABLE ONLY public.places
 
 
 --
+-- TOC entry 3593 (class 2606 OID 16423)
 -- Name: quizzes quizzes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -783,6 +913,7 @@ ALTER TABLE ONLY public.quizzes
 
 
 --
+-- TOC entry 3595 (class 2606 OID 16425)
 -- Name: quizzes unique_place_id; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -791,6 +922,16 @@ ALTER TABLE ONLY public.quizzes
 
 
 --
+-- TOC entry 3604 (class 2606 OID 16446)
+-- Name: capture_attempts capture_attempts_place_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.capture_attempts
+    ADD CONSTRAINT capture_attempts_place_id_fkey FOREIGN KEY (place_id) REFERENCES public.places(id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3602 (class 2606 OID 16426)
 -- Name: image_place image_place_place_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -799,6 +940,34 @@ ALTER TABLE ONLY public.image_place
 
 
 --
+-- TOC entry 3605 (class 2606 OID 16456)
+-- Name: mines mines_place_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.mines
+    ADD CONSTRAINT mines_place_id_fkey FOREIGN KEY (place_id) REFERENCES public.places(id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3606 (class 2606 OID 16461)
+-- Name: mines mines_qid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.mines
+    ADD CONSTRAINT mines_qid_fkey FOREIGN KEY (qid) REFERENCES public.quizzes(id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3607 (class 2606 OID 16476)
+-- Name: place_scores place_scores_place_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.place_scores
+    ADD CONSTRAINT place_scores_place_id_fkey FOREIGN KEY (place_id) REFERENCES public.places(id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3603 (class 2606 OID 16431)
 -- Name: quizzes quizzes_place_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -807,6 +976,8 @@ ALTER TABLE ONLY public.quizzes
 
 
 --
+-- TOC entry 3769 (class 0 OID 0)
+-- Dependencies: 5
 -- Name: SCHEMA public; Type: ACL; Schema: -; Owner: pg_database_owner
 --
 
@@ -814,40 +985,9 @@ REVOKE USAGE ON SCHEMA public FROM PUBLIC;
 GRANT ALL ON SCHEMA public TO PUBLIC;
 
 
---
--- PostgreSQL database dump complete
---
-
---
--- Database "postgres" dump
---
-
-\connect postgres
-
---
--- PostgreSQL database dump
---
-
--- Dumped from database version 17.5 (Debian 17.5-1.pgdg120+1)
--- Dumped by pg_dump version 17.5 (Debian 17.5-1.pgdg120+1)
-
-SET statement_timeout = 0;
-SET lock_timeout = 0;
-SET idle_in_transaction_session_timeout = 0;
-SET transaction_timeout = 0;
-SET client_encoding = 'UTF8';
-SET standard_conforming_strings = on;
-SELECT pg_catalog.set_config('search_path', '', false);
-SET check_function_bodies = false;
-SET xmloption = content;
-SET client_min_messages = warning;
-SET row_security = off;
+-- Completed on 2025-06-17 23:00:18 CEST
 
 --
 -- PostgreSQL database dump complete
---
-
---
--- PostgreSQL database cluster dump complete
 --
 

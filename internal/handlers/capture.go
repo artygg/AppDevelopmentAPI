@@ -1,5 +1,3 @@
-// internal/handlers/capture.go
-
 package handlers
 
 import (
@@ -32,25 +30,28 @@ func (h *Handler) Capture(w http.ResponseWriter, r *http.Request) {
     }
 
     if req.Passed {
-        // success: mark captured and clear cooldown
-        if _, err := h.DB.Exec(`
+        _, err := h.DB.Exec(`
             UPDATE places
-            SET captured = TRUE, user_captured = $1
-            WHERE id = $2`,
-            req.User, req.PlaceID); err != nil {
+            SET captured = TRUE,
+                user_captured = $1,
+                captured_at = NOW()
+            WHERE id = $2`, req.User, req.PlaceID)
+        if err != nil {
             http.Error(w, "db error", http.StatusInternalServerError)
             return
         }
-        h.DB.Exec(`DELETE FROM place_cooldowns WHERE place_id = $1 AND user_name = $2`,
+        h.DB.Exec(`DELETE FROM place_cooldowns
+                   WHERE place_id = $1 AND user_name = $2`,
             req.PlaceID, req.User)
+        _ = models.IncCaptured(h.DB, req.User)
     } else {
-        // fail: set 24-hour cooldown
-        if _, err := h.DB.Exec(`
-            INSERT INTO place_cooldowns (place_id, user_name, cooldown_until)
+        _, err := h.DB.Exec(`
+            INSERT INTO place_cooldowns(place_id, user_name, cooldown_until)
             VALUES ($1, $2, NOW() + INTERVAL '24 hours')
             ON CONFLICT (place_id, user_name) DO UPDATE
               SET cooldown_until = EXCLUDED.cooldown_until`,
-            req.PlaceID, req.User); err != nil {
+            req.PlaceID, req.User)
+        if err != nil {
             http.Error(w, "db error", http.StatusInternalServerError)
             return
         }

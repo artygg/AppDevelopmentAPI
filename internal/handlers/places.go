@@ -6,11 +6,10 @@ import (
     "net/http"
 )
 
-// GET /places
 func (h *Handler) Places(w http.ResponseWriter, r *http.Request) {
     user := r.Header.Get("X-Player")
     if user == "" {
-        user = "-" // аноним
+        user = "-"
     }
 
     list, err := models.GetAll(h.DB, user)

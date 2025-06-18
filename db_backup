@@ -5,7 +5,7 @@
 -- Dumped from database version 17.5 (Homebrew)
 -- Dumped by pg_dump version 17.5
 
--- Started on 2025-06-17 23:00:17 CEST
+-- Started on 2025-06-18 03:45:13 CEST
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -41,7 +41,7 @@ CREATE TABLE public.capture_attempts (
 ALTER TABLE public.capture_attempts OWNER TO postgres;
 
 --
--- TOC entry 3770 (class 0 OID 0)
+-- TOC entry 3789 (class 0 OID 0)
 -- Dependencies: 225
 -- Name: TABLE capture_attempts; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -50,7 +50,7 @@ COMMENT ON TABLE public.capture_attempts IS 'Результаты прохожд
 
 
 --
--- TOC entry 3771 (class 0 OID 0)
+-- TOC entry 3790 (class 0 OID 0)
 -- Dependencies: 225
 -- Name: COLUMN capture_attempts.time_ms; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -131,13 +131,27 @@ CREATE TABLE public.mines (
 ALTER TABLE public.mines OWNER TO postgres;
 
 --
--- TOC entry 3772 (class 0 OID 0)
+-- TOC entry 3791 (class 0 OID 0)
 -- Dependencies: 226
 -- Name: TABLE mines; Type: COMMENT; Schema: public; Owner: postgres
 --
 
 COMMENT ON TABLE public.mines IS 'Активные «мины» (блокировки вопросов) по местам';
 
+
+--
+-- TOC entry 228 (class 1259 OID 16482)
+-- Name: place_cooldowns; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.place_cooldowns (
+    place_id integer NOT NULL,
+    user_name character varying(64) NOT NULL,
+    cooldown_until timestamp with time zone NOT NULL
+);
+
+
+ALTER TABLE public.place_cooldowns OWNER TO postgres;
 
 --
 -- TOC entry 227 (class 1259 OID 16466)
@@ -156,7 +170,7 @@ CREATE TABLE public.place_scores (
 ALTER TABLE public.place_scores OWNER TO postgres;
 
 --
--- TOC entry 3773 (class 0 OID 0)
+-- TOC entry 3792 (class 0 OID 0)
 -- Dependencies: 227
 -- Name: TABLE place_scores; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -165,7 +179,7 @@ COMMENT ON TABLE public.place_scores IS 'Лучший результат (accura
 
 
 --
--- TOC entry 3774 (class 0 OID 0)
+-- TOC entry 3793 (class 0 OID 0)
 -- Dependencies: 227
 -- Name: COLUMN place_scores.best_correct; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -174,7 +188,7 @@ COMMENT ON COLUMN public.place_scores.best_correct IS 'Максимальное 
 
 
 --
--- TOC entry 3775 (class 0 OID 0)
+-- TOC entry 3794 (class 0 OID 0)
 -- Dependencies: 227
 -- Name: COLUMN place_scores.best_time_ms; Type: COMMENT; Schema: public; Owner: postgres
 --
@@ -194,7 +208,8 @@ CREATE TABLE public.places (
     longitude double precision NOT NULL,
     category_id integer NOT NULL,
     captured boolean DEFAULT false NOT NULL,
-    user_captured text
+    user_captured text,
+    captured_at timestamp with time zone
 );
 
 
@@ -217,13 +232,27 @@ CREATE SEQUENCE public.places_id_seq
 ALTER SEQUENCE public.places_id_seq OWNER TO postgres;
 
 --
--- TOC entry 3776 (class 0 OID 0)
+-- TOC entry 3795 (class 0 OID 0)
 -- Dependencies: 221
 -- Name: places_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
 ALTER SEQUENCE public.places_id_seq OWNED BY public.places.id;
 
+
+--
+-- TOC entry 229 (class 1259 OID 16493)
+-- Name: player_totals; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.player_totals (
+    user_name character varying(64) NOT NULL,
+    captured_count integer DEFAULT 0 NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.player_totals OWNER TO postgres;
 
 --
 -- TOC entry 222 (class 1259 OID 16406)
@@ -257,7 +286,7 @@ CREATE SEQUENCE public.quizzes_id_seq
 ALTER SEQUENCE public.quizzes_id_seq OWNER TO postgres;
 
 --
--- TOC entry 3777 (class 0 OID 0)
+-- TOC entry 3796 (class 0 OID 0)
 -- Dependencies: 223
 -- Name: quizzes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
@@ -266,7 +295,7 @@ ALTER SEQUENCE public.quizzes_id_seq OWNED BY public.quizzes.id;
 
 
 --
--- TOC entry 3575 (class 2604 OID 16412)
+-- TOC entry 3583 (class 2604 OID 16412)
 -- Name: places id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -274,7 +303,7 @@ ALTER TABLE ONLY public.places ALTER COLUMN id SET DEFAULT nextval('public.place
 
 
 --
--- TOC entry 3577 (class 2604 OID 16413)
+-- TOC entry 3585 (class 2604 OID 16413)
 -- Name: quizzes id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -282,7 +311,7 @@ ALTER TABLE ONLY public.quizzes ALTER COLUMN id SET DEFAULT nextval('public.quiz
 
 
 --
--- TOC entry 3761 (class 0 OID 16437)
+-- TOC entry 3778 (class 0 OID 16437)
 -- Dependencies: 225
 -- Data for Name: capture_attempts; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -292,7 +321,7 @@ COPY public.capture_attempts (id, place_id, user_name, correct, time_ms, finishe
 
 
 --
--- TOC entry 3753 (class 0 OID 16390)
+-- TOC entry 3770 (class 0 OID 16390)
 -- Dependencies: 217
 -- Data for Name: category_icons; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -716,7 +745,7 @@ COPY public.category_icons (category_id, icon_name) FROM stdin;
 
 
 --
--- TOC entry 3754 (class 0 OID 16393)
+-- TOC entry 3771 (class 0 OID 16393)
 -- Dependencies: 218
 -- Data for Name: image_place; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -729,7 +758,7 @@ COPY public.image_place (id, image_location, place_id, last_time_updated) FROM s
 
 
 --
--- TOC entry 3762 (class 0 OID 16451)
+-- TOC entry 3779 (class 0 OID 16451)
 -- Dependencies: 226
 -- Data for Name: mines; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -739,73 +768,149 @@ COPY public.mines (place_id, qid, expires_at) FROM stdin;
 
 
 --
--- TOC entry 3763 (class 0 OID 16466)
+-- TOC entry 3781 (class 0 OID 16482)
+-- Dependencies: 228
+-- Data for Name: place_cooldowns; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.place_cooldowns (place_id, user_name, cooldown_until) FROM stdin;
+7	player1	2025-06-19 02:48:00.866484+02
+\.
+
+
+--
+-- TOC entry 3780 (class 0 OID 16466)
 -- Dependencies: 227
 -- Data for Name: place_scores; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.place_scores (place_id, best_correct, best_time_ms, holder, updated_at) FROM stdin;
+8	6	47883	player1	2025-06-18 00:56:42.049754
 \.
 
 
 --
--- TOC entry 3756 (class 0 OID 16399)
+-- TOC entry 3773 (class 0 OID 16399)
 -- Dependencies: 220
 -- Data for Name: places; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.places (id, name, latitude, longitude, category_id, captured, user_captured) FROM stdin;
-1	Groothuis	52.789762	6.897665	13027	f	\N
-2	Flamingo's Plaza Wokrestaurant	52.782527	6.8971	10008	f	\N
-3	Travellers Taste "Wildlands Adventure Zoo Emmen"	52.782307	6.890582	10056	f	\N
-4	Tweestryd	52.778517	6.887992	10001	f	\N
-6	Utopolis Emmen	52.788117	6.888345	10024	f	\N
-7	Emmen Raadhuisplein	52.782889	6.892564	16041	f	\N
-8	Jungola	52.782509	6.887649	10056	f	\N
-9	Aqua Mundo	52.67391	6.77455	18075	f	\N
-10	Mommeriete Bierbrouwerij	52.611335	6.67826	10037	f	\N
-11	Nationaal Monument Westerbork	52.916879	6.611729	16020	f	\N
-12	Herinneringscentrum Kamp Westerbork	52.921008	6.569726	10030	f	\N
-13	Aqua Mexicana	52.623961	6.561419	18075	f	\N
-14	Gold Rush	52.623899	6.561734	10001	f	\N
-15	Drents Museum	52.993341	6.56413	10030	f	\N
-16	Nationaal Park Dwingelderveld	52.783369	6.373425	16034	f	\N
-17	Beerze Bulten	52.511944	6.546296	16008	f	\N
-18	Zwembad Tropiqua	53.105562	6.867629	18075	f	\N
-19	Pier 99	52.435403	7.081435	13009	f	\N
-20	Tierpark Nordhorn	52.427683	7.092108	10056	f	\N
-21	Cafe Extrablatt Nordhorn BetriebsGmbH	52.434095	7.069768	13027	f	\N
-22	Nationaal Park Drents-Friese Wold	52.927235	6.302528	16034	f	\N
-23	Maallust Bierbrouwerij	53.033238	6.387525	13029	f	\N
-24	Recreatieplas De Zwarte Dennen	52.624082	6.273048	16003	f	\N
-25	Kino Papenburg	53.076176	7.404349	10024	f	\N
-26	Schouwburg Ogterop	52.692608	6.190523	10043	f	\N
-5	Rimbula River	52.781763	6.885543	10056	t	player1
-27	Test	52.78084378872667	6.910397750597617	1	f	\N
-28	Place 2	52.78	6.9	1	f	\N
-29	The kingdom of kingdoms	52.78	6.9	2	f	\N
-30	Test	52.78	6.9	9	f	\N
-31	123	52.78	6.9	1	f	\N
-32	Roundabout	52.77443236693949	6.9266169173208025	7	f	\N
-33	KIGDOM	52.78164658722868	6.938662737451782	2	f	\N
-34	Сральник	52.779696089101655	6.922779386251341	6	f	\N
-35	Test 	52.77269752118785	6.900077880431531	1	f	\N
+COPY public.places (id, name, latitude, longitude, category_id, captured, user_captured, captured_at) FROM stdin;
+1	Groothuis	52.789762	6.897665	13027	f	\N	\N
+2	Flamingo's Plaza Wokrestaurant	52.782527	6.8971	10008	f	\N	\N
+3	Travellers Taste "Wildlands Adventure Zoo Emmen"	52.782307	6.890582	10056	f	\N	\N
+4	Tweestryd	52.778517	6.887992	10001	f	\N	\N
+7	Emmen Raadhuisplein	52.782889	6.892564	16041	f	\N	\N
+9	Aqua Mundo	52.67391	6.77455	18075	f	\N	\N
+10	Mommeriete Bierbrouwerij	52.611335	6.67826	10037	f	\N	\N
+11	Nationaal Monument Westerbork	52.916879	6.611729	16020	f	\N	\N
+12	Herinneringscentrum Kamp Westerbork	52.921008	6.569726	10030	f	\N	\N
+13	Aqua Mexicana	52.623961	6.561419	18075	f	\N	\N
+14	Gold Rush	52.623899	6.561734	10001	f	\N	\N
+15	Drents Museum	52.993341	6.56413	10030	f	\N	\N
+16	Nationaal Park Dwingelderveld	52.783369	6.373425	16034	f	\N	\N
+17	Beerze Bulten	52.511944	6.546296	16008	f	\N	\N
+18	Zwembad Tropiqua	53.105562	6.867629	18075	f	\N	\N
+19	Pier 99	52.435403	7.081435	13009	f	\N	\N
+20	Tierpark Nordhorn	52.427683	7.092108	10056	f	\N	\N
+21	Cafe Extrablatt Nordhorn BetriebsGmbH	52.434095	7.069768	13027	f	\N	\N
+22	Nationaal Park Drents-Friese Wold	52.927235	6.302528	16034	f	\N	\N
+23	Maallust Bierbrouwerij	53.033238	6.387525	13029	f	\N	\N
+24	Recreatieplas De Zwarte Dennen	52.624082	6.273048	16003	f	\N	\N
+25	Kino Papenburg	53.076176	7.404349	10024	f	\N	\N
+26	Schouwburg Ogterop	52.692608	6.190523	10043	f	\N	\N
+5	Rimbula River	52.781763	6.885543	10056	t	player1	\N
+27	Test	52.78084378872667	6.910397750597617	1	f	\N	\N
+28	Place 2	52.78	6.9	1	f	\N	\N
+29	The kingdom of kingdoms	52.78	6.9	2	f	\N	\N
+30	Test	52.78	6.9	9	f	\N	\N
+31	123	52.78	6.9	1	f	\N	\N
+32	Roundabout	52.77443236693949	6.9266169173208025	7	f	\N	\N
+33	KIGDOM	52.78164658722868	6.938662737451782	2	f	\N	\N
+34	Сральник	52.779696089101655	6.922779386251341	6	f	\N	\N
+35	Test 	52.77269752118785	6.900077880431531	1	f	\N	\N
+36	Park Skibidi	52.78151968419492	6.889653945124016	1	f	\N	\N
+8	Jungola	52.782509	6.887649	10056	t	player1	\N
+37	КУыефгкфте	52.78	6.9000000000000785	3	f	\N	\N
+6	Utopolis Emmen	52.788117	6.888345	10024	t	player2	\N
+38	Place 1	52.489232875090906	6.722855160051637	1	f	\N	\N
+39	Place 2	52.9406544685492	6.709924982479289	3	f	\N	\N
+40	Place 3	52.99595681783049	6.866820306576102	8	f	\N	\N
+41	Place 4	52.331901001064075	6.1061867287419895	8	f	\N	\N
+42	Place 5	52.64912122019631	6.3103146441682245	4	f	\N	\N
+43	Place 6	52.88568995281894	6.048682828165794	3	f	\N	\N
+44	Place 7	52.38928090266052	6.807730020190841	9	f	\N	\N
+45	Place 8	52.80264227975329	6.008254786546211	1	f	\N	\N
+46	Place 9	52.301761111403614	6.2937599825195125	4	f	\N	\N
+47	Place 10	52.83370148458287	6.08079209856484	4	f	\N	\N
+48	Place 11	52.511440728138446	6.992033127704482	8	f	\N	\N
+49	Place 12	52.97381032953262	6.5984678819260605	2	f	\N	\N
+50	Place 13	52.2326683566221	6.7464032580936495	3	f	\N	\N
+51	Place 14	52.637081739826606	6.921008135708225	5	f	\N	\N
+52	Place 15	52.96437450340058	6.498963410585654	6	f	\N	\N
+53	Place 16	52.3552022848242	6.906882128629893	5	f	\N	\N
+54	Place 17	52.933529562963976	6.239410377567544	4	f	\N	\N
+55	Place 18	52.51823208042116	6.927358503481292	3	f	\N	\N
+56	Place 19	52.30365166868337	6.296512641175206	5	f	\N	\N
+57	Place 20	52.52351300599226	6.139758156409249	7	f	\N	\N
+58	Place 21	52.57241703954925	6.236986624077663	2	f	\N	\N
+59	Place 22	52.46792771347626	6.66672704912164	5	f	\N	\N
+60	Place 23	52.78204137851033	6.772075427359217	6	f	\N	\N
+61	Place 24	52.05551332803444	6.232242998208606	7	f	\N	\N
+62	Place 25	52.69041301802896	6.919800837909783	8	f	\N	\N
+63	Place 26	52.4776311491485	6.0012684954779445	3	f	\N	\N
+64	Place 27	52.57372565829102	6.557836898378161	3	f	\N	\N
+65	Place 28	52.22383437235715	6.983430775959939	5	f	\N	\N
+66	Place 29	52.153769875183436	6.2456164132889525	4	f	\N	\N
+67	Place 30	52.1607497584544	6.47193017929764	9	f	\N	\N
 \.
 
 
 --
--- TOC entry 3758 (class 0 OID 16406)
+-- TOC entry 3782 (class 0 OID 16493)
+-- Dependencies: 229
+-- Data for Name: player_totals; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.player_totals (user_name, captured_count, updated_at) FROM stdin;
+user_001	22	2025-06-18 03:35:59.09674+02
+user_002	1	2025-06-18 03:35:59.09674+02
+user_003	17	2025-06-18 03:35:59.09674+02
+user_004	10	2025-06-18 03:35:59.09674+02
+user_005	5	2025-06-18 03:35:59.09674+02
+user_006	24	2025-06-18 03:35:59.09674+02
+user_007	6	2025-06-18 03:35:59.09674+02
+user_008	4	2025-06-18 03:35:59.09674+02
+user_009	19	2025-06-18 03:35:59.09674+02
+user_010	9	2025-06-18 03:35:59.09674+02
+user_011	12	2025-06-18 03:35:59.09674+02
+user_012	26	2025-06-18 03:35:59.09674+02
+user_013	18	2025-06-18 03:35:59.09674+02
+user_014	21	2025-06-18 03:35:59.09674+02
+user_015	7	2025-06-18 03:35:59.09674+02
+user_016	11	2025-06-18 03:35:59.09674+02
+user_017	2	2025-06-18 03:35:59.09674+02
+user_018	9	2025-06-18 03:35:59.09674+02
+user_019	9	2025-06-18 03:35:59.09674+02
+user_020	26	2025-06-18 03:35:59.09674+02
+\.
+
+
+--
+-- TOC entry 3775 (class 0 OID 16406)
 -- Dependencies: 222
 -- Data for Name: quizzes; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.quizzes (id, place_id, quiz_json, updated_at) FROM stdin;
 1	5	{"place_id": 5, "questions": [{"text": "Where is Rimbula River located?", "answer": 2, "options": ["Australia", "Brazil", "Netherlands", "Canada"]}, {"text": "What type of animals are commonly found around Rimbula River?", "answer": 1, "options": ["Lions", "Crocodiles", "Penguins", "Elephants"]}, {"text": "What is Rimbula River known for?", "answer": 1, "options": ["Historic landmarks", "Rich biodiversity", "Modern architecture", "Culinary delights"]}, {"text": "Which of the following is a common Dutch dish?", "answer": 2, "options": ["Sushi", "Tacos", "Stroopwafel", "Pasta"]}, {"text": "What is the capital city of the Netherlands?", "answer": 0, "options": ["Amsterdam", "Berlin", "Paris", "London"]}, {"text": "Which famous Dutch painter is known for his sunflower paintings?", "answer": 0, "options": ["Vincent van Gogh", "Pablo Picasso", "Leonardo da Vinci", "Claude Monet"]}, {"text": "What is the currency of the Netherlands?", "answer": 1, "options": ["Pound", "Euro", "Dollar", "Yen"]}]}	2025-06-17 22:59:37.000615
+3	8	{"place_id": 8, "questions": [{"id": "c5e2fb3c-2b83-41fc-8159-3e23695d9699", "text": "What is the highest point in Jungola?", "answer": 2, "options": ["Mount Evergreen", "Jungle Peak", "Canopy Summit", "Wilderness Ridge"]}, {"id": "af31972d-d258-425a-bba8-e93a88faf860", "text": "Which animal is considered the symbol of Jungola?", "answer": 3, "options": ["Tiger", "Elephant", "Jaguar", "Gorilla"]}, {"id": "5fa9ce42-5d37-4be5-81a8-6a4e1c6183f8", "text": "What is the main mode of transportation in Jungola?", "answer": 1, "options": ["Jeep", "Canoe", "Helicopter", "Bicycle"]}, {"id": "795e488e-78a3-4684-b525-6351d031f644", "text": "Which river runs through the heart of Jungola?", "answer": 0, "options": ["Serpentine River", "Mighty Amazon", "Jungle Creek", "Wild Rapids"]}, {"id": "d78d6107-43da-4353-9ce9-aa193ade902d", "text": "What is the traditional dish of Jungola?", "answer": 3, "options": ["Banana Curry", "Mango Salad", "Coconut Rice", "Jungle Stew"]}, {"id": "58dec189-36bb-4c2d-9cd9-a6d5ab3f8fc7", "text": "Which famous explorer is known for discovering Jungola?", "answer": 2, "options": ["Christopher Columbus", "Marco Polo", "David Livingstone", "Ferdinand Magellan"]}, {"id": "8f5e35a6-01e1-4d47-a0fa-f93d65b56e73", "text": "What is the average annual rainfall in Jungola?", "answer": 1, "options": ["1500mm", "2000mm", "2500mm", "3000mm"]}]}	2025-06-18 00:56:44.559131
+4	7	{"place_id": 7, "questions": [{"id": "f1f72dd7-6a70-425d-b3e2-75d1518e09ab", "text": "In which country is Emmen Raadhuisplein located?", "answer": 0, "options": ["Netherlands", "Belgium", "Germany", "France"]}, {"id": "d763cef6-09a4-4430-85f9-61c9bd82fa52", "text": "What are the geographical coordinates of Emmen Raadhuisplein?", "answer": 0, "options": ["52.78289,6.89256", "51.5074,0.1278", "40.7128,-74.0060", "48.8566,2.3522"]}, {"id": "a17f7362-4e55-4911-92dd-29ebf88b505b", "text": "What is the main function of the building at Emmen Raadhuisplein?", "answer": 0, "options": ["City Hall", "Library", "Museum", "Hospital"]}, {"id": "ed0ced4f-b3be-4f1a-b9f9-426fd5a0db29", "text": "Which architectural style is the Emmen Raadhuisplein building known for?", "answer": 0, "options": ["Modern", "Baroque", "Renaissance", "Art Deco"]}, {"id": "ef6ed611-c607-4e2e-87d7-f802919ef35d", "text": "What is the significance of Raadhuisplein in the community of Emmen?", "answer": 0, "options": ["Important civic center", "Shopping district", "Industrial area", "Residential neighborhood"]}, {"id": "039548eb-62cb-4809-bbaa-ed743c2ddafc", "text": "What is the historical background of Emmen Raadhuisplein?", "answer": 1, "options": ["Built in the 1950s", "Originally a market square", "Designed by a famous architect", "Served as a military outpost"]}, {"id": "779198ec-85a0-4d85-a40c-1cfcf5bcbdeb", "text": "What other attractions or facilities are located near Emmen Raadhuisplein?", "answer": 0, "options": ["Park", "Cinema", "Sports stadium", "Shopping mall"]}]}	2025-06-18 02:11:09.434724
 \.
 
 
 --
--- TOC entry 3778 (class 0 OID 0)
+-- TOC entry 3797 (class 0 OID 0)
 -- Dependencies: 224
 -- Name: capture_attempts_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -814,7 +919,7 @@ SELECT pg_catalog.setval('public.capture_attempts_id_seq', 1, false);
 
 
 --
--- TOC entry 3779 (class 0 OID 0)
+-- TOC entry 3798 (class 0 OID 0)
 -- Dependencies: 219
 -- Name: image_place_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -823,25 +928,25 @@ SELECT pg_catalog.setval('public.image_place_id_seq', 16, true);
 
 
 --
--- TOC entry 3780 (class 0 OID 0)
+-- TOC entry 3799 (class 0 OID 0)
 -- Dependencies: 221
 -- Name: places_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.places_id_seq', 35, true);
+SELECT pg_catalog.setval('public.places_id_seq', 67, true);
 
 
 --
--- TOC entry 3781 (class 0 OID 0)
+-- TOC entry 3800 (class 0 OID 0)
 -- Dependencies: 223
 -- Name: quizzes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.quizzes_id_seq', 1, true);
+SELECT pg_catalog.setval('public.quizzes_id_seq', 4, true);
 
 
 --
--- TOC entry 3597 (class 2606 OID 16445)
+-- TOC entry 3607 (class 2606 OID 16445)
 -- Name: capture_attempts capture_attempts_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -850,7 +955,7 @@ ALTER TABLE ONLY public.capture_attempts
 
 
 --
--- TOC entry 3585 (class 2606 OID 16415)
+-- TOC entry 3595 (class 2606 OID 16415)
 -- Name: category_icons category_icons_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -859,7 +964,7 @@ ALTER TABLE ONLY public.category_icons
 
 
 --
--- TOC entry 3587 (class 2606 OID 16417)
+-- TOC entry 3597 (class 2606 OID 16417)
 -- Name: image_place image_place_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -868,7 +973,7 @@ ALTER TABLE ONLY public.image_place
 
 
 --
--- TOC entry 3589 (class 2606 OID 16419)
+-- TOC entry 3599 (class 2606 OID 16419)
 -- Name: image_place image_place_place_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -877,7 +982,7 @@ ALTER TABLE ONLY public.image_place
 
 
 --
--- TOC entry 3599 (class 2606 OID 16455)
+-- TOC entry 3609 (class 2606 OID 16455)
 -- Name: mines mines_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -886,7 +991,16 @@ ALTER TABLE ONLY public.mines
 
 
 --
--- TOC entry 3601 (class 2606 OID 16475)
+-- TOC entry 3614 (class 2606 OID 16486)
+-- Name: place_cooldowns place_cooldowns_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.place_cooldowns
+    ADD CONSTRAINT place_cooldowns_pkey PRIMARY KEY (place_id, user_name);
+
+
+--
+-- TOC entry 3611 (class 2606 OID 16475)
 -- Name: place_scores place_scores_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -895,7 +1009,7 @@ ALTER TABLE ONLY public.place_scores
 
 
 --
--- TOC entry 3591 (class 2606 OID 16421)
+-- TOC entry 3601 (class 2606 OID 16421)
 -- Name: places places_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -904,7 +1018,16 @@ ALTER TABLE ONLY public.places
 
 
 --
--- TOC entry 3593 (class 2606 OID 16423)
+-- TOC entry 3617 (class 2606 OID 16499)
+-- Name: player_totals player_totals_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.player_totals
+    ADD CONSTRAINT player_totals_pkey PRIMARY KEY (user_name);
+
+
+--
+-- TOC entry 3603 (class 2606 OID 16423)
 -- Name: quizzes quizzes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -913,7 +1036,7 @@ ALTER TABLE ONLY public.quizzes
 
 
 --
--- TOC entry 3595 (class 2606 OID 16425)
+-- TOC entry 3605 (class 2606 OID 16425)
 -- Name: quizzes unique_place_id; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -922,7 +1045,23 @@ ALTER TABLE ONLY public.quizzes
 
 
 --
--- TOC entry 3604 (class 2606 OID 16446)
+-- TOC entry 3612 (class 1259 OID 16492)
+-- Name: idx_place_cooldowns_user_until; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_place_cooldowns_user_until ON public.place_cooldowns USING btree (user_name, cooldown_until);
+
+
+--
+-- TOC entry 3615 (class 1259 OID 16500)
+-- Name: idx_totals_rank; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_totals_rank ON public.player_totals USING btree (captured_count DESC);
+
+
+--
+-- TOC entry 3620 (class 2606 OID 16446)
 -- Name: capture_attempts capture_attempts_place_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -931,7 +1070,7 @@ ALTER TABLE ONLY public.capture_attempts
 
 
 --
--- TOC entry 3602 (class 2606 OID 16426)
+-- TOC entry 3618 (class 2606 OID 16426)
 -- Name: image_place image_place_place_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -940,7 +1079,7 @@ ALTER TABLE ONLY public.image_place
 
 
 --
--- TOC entry 3605 (class 2606 OID 16456)
+-- TOC entry 3621 (class 2606 OID 16456)
 -- Name: mines mines_place_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -949,7 +1088,7 @@ ALTER TABLE ONLY public.mines
 
 
 --
--- TOC entry 3606 (class 2606 OID 16461)
+-- TOC entry 3622 (class 2606 OID 16461)
 -- Name: mines mines_qid_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -958,7 +1097,16 @@ ALTER TABLE ONLY public.mines
 
 
 --
--- TOC entry 3607 (class 2606 OID 16476)
+-- TOC entry 3624 (class 2606 OID 16487)
+-- Name: place_cooldowns place_cooldowns_place_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.place_cooldowns
+    ADD CONSTRAINT place_cooldowns_place_id_fkey FOREIGN KEY (place_id) REFERENCES public.places(id) ON DELETE CASCADE;
+
+
+--
+-- TOC entry 3623 (class 2606 OID 16476)
 -- Name: place_scores place_scores_place_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -967,7 +1115,7 @@ ALTER TABLE ONLY public.place_scores
 
 
 --
--- TOC entry 3603 (class 2606 OID 16431)
+-- TOC entry 3619 (class 2606 OID 16431)
 -- Name: quizzes quizzes_place_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -976,7 +1124,7 @@ ALTER TABLE ONLY public.quizzes
 
 
 --
--- TOC entry 3769 (class 0 OID 0)
+-- TOC entry 3788 (class 0 OID 0)
 -- Dependencies: 5
 -- Name: SCHEMA public; Type: ACL; Schema: -; Owner: pg_database_owner
 --
@@ -985,7 +1133,7 @@ REVOKE USAGE ON SCHEMA public FROM PUBLIC;
 GRANT ALL ON SCHEMA public TO PUBLIC;
 
 
--- Completed on 2025-06-17 23:00:18 CEST
+-- Completed on 2025-06-18 03:45:13 CEST
 
 --
 -- PostgreSQL database dump complete

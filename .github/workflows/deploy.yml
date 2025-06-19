@@ -28,5 +28,5 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           script: |
             cd AppDevelopment-Ubuntu
-            docker-compose down
-            docker-compose up --build -d
+            docker compose down
+            docker compose up --build -d

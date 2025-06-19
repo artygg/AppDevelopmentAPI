@@ -1175,7 +1175,38 @@ func quizHandler(db *sql.DB, key string) http.HandlerFunc {
 	})
 }
 
-/* ────────────────────  STUB IMAGE HANDLERS  ───────────────────── */
+func capturedPlacesHandler(db *sql.DB) http.HandlerFunc {
+	return authMiddleware(func(w http.ResponseWriter, r *http.Request) {
+		username := r.Header.Get("X-Username")
+		if username == "" {
+			http.Error(w, "Authentication required", http.StatusUnauthorized)
+			return
+		}
+
+		rows, err := db.Query(`SELECT id, name, latitude, longitude, category_id, captured, user_captured FROM places WHERE user_captured = $1`, username)
+		if err != nil {
+			http.Error(w, "DB error", http.StatusInternalServerError)
+			return
+		}
+		defer rows.Close()
+
+		var places []Place
+		for rows.Next() {
+			var p Place
+			var uc sql.NullString
+			if err := rows.Scan(&p.ID, &p.Name, &p.Latitude, &p.Longitude, &p.CategoryID, &p.Captured, &uc); err != nil {
+				continue
+			}
+			if uc.Valid {
+				p.UserCaptured = &uc.String
+			}
+			places = append(places, p)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(places)
+	})
+}
 
 /* ─────────────────────────────  MAIN  ─────────────────────────── */
 
@@ -1227,6 +1258,7 @@ func main() {
 	http.HandleFunc("/api/capture", capturePlaceHandler(db))
 	http.HandleFunc("/api/mine", mineHandler(db))
 	http.HandleFunc("/api/finish", finishHandler(db))
+	http.HandleFunc("/api/captured_places", capturedPlacesHandler(db))
 
 	// Image routes
 	http.HandleFunc("/upload-file", UploadImageHandler(db))

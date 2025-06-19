@@ -850,7 +850,6 @@ func registerHandler(db *sql.DB) http.HandlerFunc {
 			http.Error(w, "Failed to create refresh token", http.StatusInternalServerError)
 			return
 		}
-
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(AuthResponse{

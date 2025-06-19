@@ -4,7 +4,7 @@ package main
 
 import (
 	_ "AppDevelopmentAPI/internal/db"
-	//"AppDevelopmentAPI/internal/handlers"
+	"AppDevelopmentAPI/internal/handlers"
 	"AppDevelopmentAPI/websocket"
 	"bytes"
 	"crypto/rand"
@@ -1352,40 +1352,55 @@ func main() {
 		}
 	}()
 
-	key := os.Getenv("OPENAI_API_KEY")
+	//key := os.Getenv("OPENAI_API_KEY")
 
-	//h := handlers.New(db, os.Getenv("OPENAI_API_KEY"))
-
-	// Auth routes
-	http.HandleFunc("/auth/register", registerHandler(db))
-	http.HandleFunc("/auth/login", loginHandler(db))
-	http.HandleFunc("/auth/refresh", refreshTokenHandler(db))
-	http.HandleFunc("/auth/logout", logoutHandler(db))
-	http.HandleFunc("/auth/profile", profileHandler(db))
+	h := handlers.New(db, os.Getenv("OPENAI_API_KEY"))
 
 	// Public routes
-	http.HandleFunc("/places", placesHandler(db))
-	http.HandleFunc("/quiz", quizHandler(db, key))
-	http.HandleFunc("/icon", iconLookupHandler(db))
-	http.HandleFunc("/category_icons.json", categoryIconsHandler(db))
+	//http.HandleFunc("/places", placesHandler(db))
+	//http.HandleFunc("/quiz", quizHandler(db, key))
+	//http.HandleFunc("/icon", iconLookupHandler(db))
+	//http.HandleFunc("/category_icons.json", categoryIconsHandler(db))
 
 	// Protected routes
-	http.HandleFunc("/api/places", createPlaceHandler(db))
-	http.HandleFunc("/api/capture", capturePlaceHandler(db))
-	http.HandleFunc("/api/mine", mineHandler(db))
-	http.HandleFunc("/api/finish", finishHandler(db))
-	http.HandleFunc("/api/captured_places", capturedPlacesHandler(db))
+	//http.HandleFunc("/api/places", createPlaceHandler(db))
+	//http.HandleFunc("/api/capture", capturePlaceHandler(db))
+	//http.HandleFunc("/api/mine", mineHandler(db))
+	//http.HandleFunc("/api/finish", finishHandler(db))
+	//http.HandleFunc("/api/captured_places", capturedPlacesHandler(db))
+
+	mux := http.NewServeMux()
+	// Auth routes
+	mux.HandleFunc("/auth/register", registerHandler(db))
+	mux.HandleFunc("/auth/login", loginHandler(db))
+	mux.HandleFunc("/auth/refresh", refreshTokenHandler(db))
+	mux.HandleFunc("/auth/logout", logoutHandler(db))
+	mux.HandleFunc("/auth/profile", profileHandler(db))
+
+	// Public routes
+	mux.HandleFunc("/places", corsMiddleware(h.Places))
+	mux.HandleFunc("/quiz", corsMiddleware(h.Quiz))
+	mux.HandleFunc("/icon", corsMiddleware(h.IconLookup))
+	mux.HandleFunc("/category_icons.json", corsMiddleware(h.CategoryIcons))
+	mux.HandleFunc("/leaderboard", h.Leaderboard)
+
+	// Protected routes
+	mux.HandleFunc("/api/places", corsMiddleware(authMiddleware(h.CreatePlace)))
+	mux.HandleFunc("/api/capture", corsMiddleware(authMiddleware(h.Capture)))
+	mux.HandleFunc("/api/mine", corsMiddleware(authMiddleware(h.Mine)))
+	mux.HandleFunc("/api/finish", corsMiddleware(authMiddleware(h.Finish)))
+	mux.HandleFunc("/api/captured_places", capturedPlacesHandler(db))
 
 	// Image routes
-	http.HandleFunc("/upload-file", UploadImageHandler(db))
-	http.HandleFunc("/get-image", UploadImageHandler(db))
+	mux.HandleFunc("/upload-file", UploadImageHandler(db))
+	mux.HandleFunc("/get-image", GetImageByPlaceIDHandler(db))
 
 	// WebSocket
 	go websocket.HandleMessages()
-	http.HandleFunc("/ws", websocket.WebSocketHandler)
+	mux.HandleFunc("/ws", websocket.WebSocketHandler)
 
 	// Static files
-	http.Handle("/", http.FileServer(http.Dir(".")))
+	mux.Handle("/", http.FileServer(http.Dir(".")))
 
 	log.Println("API listening on :8080")
 	log.Println("Authentication endpoints available:")
@@ -1397,5 +1412,5 @@ func main() {
 	log.Println()
 	log.Println("Protected endpoints require 'Authorization: Bearer <token>' header")
 
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(":8080", mux))
 }

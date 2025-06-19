@@ -67,9 +67,12 @@ ALTER TABLE public.image_place ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY 
 
 CREATE TABLE public.mines (
     place_id integer NOT NULL,
-    qid integer NOT NULL,
-    expires_at timestamp without time zone NOT NULL
+    qid text NOT NULL,
+    expires_at timestamp without time zone NOT NULL,
+    PRIMARY KEY (place_id, qid)
 );
+
+ALTER TABLE public.mines ADD CONSTRAINT mines_place_id_qid_pk PRIMARY KEY (place_id, qid);
 
 CREATE TABLE public.place_scores (
     place_id integer NOT NULL,
@@ -86,8 +89,10 @@ CREATE TABLE public.places (
     longitude double precision NOT NULL,
     category_id integer NOT NULL,
     captured boolean DEFAULT false NOT NULL,
-    user_captured text
+    user_captured text,
+    captured_at timestamp without time zone
 );
+
 CREATE SEQUENCE public.places_id_seq
     AS integer
     START WITH 1
@@ -110,4 +115,18 @@ CREATE SEQUENCE public.quizzes_id_seq
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-ALTER SEQUENCE public.quizzes_id_seq OWNED BY public.quizzes.id; 
+ALTER SEQUENCE public.quizzes_id_seq OWNED BY public.quizzes.id;
+
+CREATE TABLE place_cooldowns (
+    place_id INTEGER NOT NULL,
+    user_name TEXT NOT NULL,
+    cooldown_until TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+    PRIMARY KEY (place_id, user_name),
+    FOREIGN KEY (place_id) REFERENCES places(id) ON DELETE CASCADE
+);
+
+CREATE TABLE player_totals (
+    user_name TEXT PRIMARY KEY,
+    captured_count INTEGER NOT NULL DEFAULT 0,
+    updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT now()
+); 

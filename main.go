@@ -73,6 +73,7 @@ type User struct {
 	LastLoginAt  *time.Time `json:"last_login_at,omitempty"`
 	FailedLogins int        `json:"-"`
 	LockedUntil  *time.Time `json:"-"`
+	MapImageUrl  *string    `json:"map_image_url"`
 }
 
 type LoginRequest struct {
@@ -308,7 +309,8 @@ func initDB(db *sql.DB) {
 			is_active BOOLEAN DEFAULT TRUE,
 			last_login_at TIMESTAMP,
 			failed_logins INTEGER DEFAULT 0,
-			locked_until TIMESTAMP
+			locked_until TIMESTAMP,
+		    map_image_url TEXT
 		)
 	`)
 	if err != nil {
@@ -347,14 +349,15 @@ func getUserByUsername(db *sql.DB, username string) (*User, error) {
 	user := &User{}
 	var lastLoginAt sql.NullTime
 	var lockedUntil sql.NullTime
+	var mapImageURL sql.NullString
 
 	err := db.QueryRow(`
 		SELECT id, username, email, password_hash, created_at, updated_at, 
-		       is_active, last_login_at, failed_logins, locked_until
+		       is_active, last_login_at, failed_logins, locked_until, map_image_url
 		FROM users WHERE username = $1`, username).Scan(
 		&user.ID, &user.Username, &user.Email, &user.Password,
 		&user.CreatedAt, &user.UpdatedAt, &user.IsActive,
-		&lastLoginAt, &user.FailedLogins, &lockedUntil)
+		&lastLoginAt, &user.FailedLogins, &lockedUntil, &mapImageURL)
 
 	if err != nil {
 		return nil, err
@@ -365,6 +368,9 @@ func getUserByUsername(db *sql.DB, username string) (*User, error) {
 	}
 	if lockedUntil.Valid {
 		user.LockedUntil = &lockedUntil.Time
+	}
+	if mapImageURL.Valid {
+		user.MapImageUrl = &mapImageURL.String
 	}
 
 	return user, nil
@@ -374,14 +380,15 @@ func getUserByEmail(db *sql.DB, email string) (*User, error) {
 	user := &User{}
 	var lastLoginAt sql.NullTime
 	var lockedUntil sql.NullTime
+	var mapImageURL sql.NullString
 
 	err := db.QueryRow(`
 		SELECT id, username, email, password_hash, created_at, updated_at, 
-		       is_active, last_login_at, failed_logins, locked_until
+		       is_active, last_login_at, failed_logins, locked_until, map_image_url
 		FROM users WHERE email = $1`, email).Scan(
 		&user.ID, &user.Username, &user.Email, &user.Password,
 		&user.CreatedAt, &user.UpdatedAt, &user.IsActive,
-		&lastLoginAt, &user.FailedLogins, &lockedUntil)
+		&lastLoginAt, &user.FailedLogins, &lockedUntil, &mapImageURL)
 
 	if err != nil {
 		return nil, err
@@ -392,6 +399,9 @@ func getUserByEmail(db *sql.DB, email string) (*User, error) {
 	}
 	if lockedUntil.Valid {
 		user.LockedUntil = &lockedUntil.Time
+	}
+	if mapImageURL.Valid {
+		user.MapImageUrl = &mapImageURL.String
 	}
 
 	return user, nil
@@ -501,6 +511,97 @@ func cleanupExpiredTokens(db *sql.DB) {
 	if err != nil {
 		log.Printf("Error cleaning up expired tokens: %v", err)
 	}
+}
+
+/* ────────────────────────  PROFILE IMAGE HANDLERS  ─────────────────────────── */
+
+type ProfileImage struct {
+	ID       int    `json:"id"`
+	ImageURL string `json:"image_url"`
+}
+
+type UpdateMapImageRequest struct {
+	ImageURL string `json:"image_url"`
+}
+
+func getAllProfileImagesHandler(db *sql.DB) http.HandlerFunc {
+	return corsMiddleware(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		rows, err := db.Query(`SELECT id, image_url FROM profile_images ORDER BY id`)
+		if err != nil {
+			log.Printf("Error fetching profile images: %v", err)
+			http.Error(w, "Database error", http.StatusInternalServerError)
+			return
+		}
+		defer rows.Close()
+
+		var images []ProfileImage
+		for rows.Next() {
+			var img ProfileImage
+			if err := rows.Scan(&img.ID, &img.ImageURL); err != nil {
+				log.Printf("Error scanning profile image: %v", err)
+				continue
+			}
+			images = append(images, img)
+		}
+
+		if err := rows.Err(); err != nil {
+			log.Printf("Error iterating profile images: %v", err)
+			http.Error(w, "Database error", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(images)
+	})
+}
+
+func updateUserMapImageHandler(db *sql.DB) http.HandlerFunc {
+	return corsMiddleware(authMiddleware(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		userID, err := strconv.Atoi(r.Header.Get("X-User-ID"))
+		if err != nil {
+			http.Error(w, "Invalid user ID", http.StatusBadRequest)
+			return
+		}
+
+		var req UpdateMapImageRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid JSON", http.StatusBadRequest)
+			return
+		}
+
+		if strings.TrimSpace(req.ImageURL) == "" {
+			http.Error(w, "Image URL cannot be empty", http.StatusBadRequest)
+			return
+		}
+
+		_, err = db.Exec(`
+			UPDATE users 
+			SET map_image_url = $1, updated_at = NOW() 
+			WHERE id = $2`, req.ImageURL, userID)
+
+		if err != nil {
+			log.Printf("Error updating user map image: %v", err)
+			http.Error(w, "Failed to update map image", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success":   true,
+			"message":   "Map image updated successfully",
+			"image_url": req.ImageURL,
+		})
+	}))
 }
 
 /* ─────────────────────────  PLACE CRUD HELPERS  ─────────────────────── */
@@ -835,14 +936,15 @@ func getUserByID(db *sql.DB, id int) (*User, error) {
 	user := &User{}
 	var lastLoginAt sql.NullTime
 	var lockedUntil sql.NullTime
+	var mapImageURL sql.NullString
 
 	err := db.QueryRow(`
 		SELECT id, username, email, password_hash, created_at, updated_at, 
-		       is_active, last_login_at, failed_logins, locked_until
+		       is_active, last_login_at, failed_logins, locked_until, map_image_url
 		FROM users WHERE id = $1`, id).Scan(
 		&user.ID, &user.Username, &user.Email, &user.Password,
 		&user.CreatedAt, &user.UpdatedAt, &user.IsActive,
-		&lastLoginAt, &user.FailedLogins, &lockedUntil)
+		&lastLoginAt, &user.FailedLogins, &lockedUntil, &mapImageURL)
 
 	if err != nil {
 		return nil, err
@@ -853,6 +955,9 @@ func getUserByID(db *sql.DB, id int) (*User, error) {
 	}
 	if lockedUntil.Valid {
 		user.LockedUntil = &lockedUntil.Time
+	}
+	if mapImageURL.Valid {
+		user.MapImageUrl = &mapImageURL.String
 	}
 
 	return user, nil
@@ -947,14 +1052,22 @@ func profileHandler(db *sql.DB) http.HandlerFunc {
 
 		user := &User{}
 		var lastLoginAt sql.NullTime
+		var mapImageURL sql.NullString
+
 		err := db.QueryRow(`
-			SELECT id, username, email, created_at, updated_at, is_active, last_login_at
+			SELECT id, username, email, created_at, updated_at, is_active, last_login_at, map_image_url
 			FROM users WHERE id = $1`, userID).Scan(
 			&user.ID, &user.Username, &user.Email,
-			&user.CreatedAt, &user.UpdatedAt, &user.IsActive, &lastLoginAt)
+			&user.CreatedAt, &user.UpdatedAt, &user.IsActive,
+			&lastLoginAt, &mapImageURL,
+		)
+
+		if mapImageURL.Valid {
+			user.MapImageUrl = &mapImageURL.String
+		}
 
 		if err != nil {
-			http.Error(w, "User not found", http.StatusNotFound)
+			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
 
@@ -1263,6 +1376,8 @@ func main() {
 	// Image routes
 	http.HandleFunc("/upload-file", UploadImageHandler(db))
 	http.HandleFunc("/get-image", GetImageByPlaceIDHandler(db))
+	http.HandleFunc("/api/profile_images", getAllProfileImagesHandler(db)) // GET - fetch all profile images
+	http.HandleFunc("/api/user/map_image", updateUserMapImageHandler(db))
 
 	// WebSocket
 	go websocket.HandleMessages()

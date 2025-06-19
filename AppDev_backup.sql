@@ -97,12 +97,25 @@ ALTER TABLE public.image_place ALTER COLUMN id ADD GENERATED ALWAYS AS IDENTITY 
 
 CREATE TABLE public.mines (
     place_id integer NOT NULL,
-    qid integer NOT NULL,
+    qid text NOT NULL,
     expires_at timestamp without time zone NOT NULL
 );
 
 
 ALTER TABLE public.mines OWNER TO postgres;
+
+--
+-- Name: place_cooldowns; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.place_cooldowns (
+    place_id integer NOT NULL,
+    user_name text NOT NULL,
+    cooldown_until timestamp without time zone NOT NULL
+);
+
+
+ALTER TABLE public.place_cooldowns OWNER TO postgres;
 
 --
 -- Name: place_scores; Type: TABLE; Schema: public; Owner: postgres
@@ -130,7 +143,8 @@ CREATE TABLE public.places (
     longitude double precision NOT NULL,
     category_id integer NOT NULL,
     captured boolean DEFAULT false NOT NULL,
-    user_captured text
+    user_captured text,
+    captured_at timestamp without time zone
 );
 
 
@@ -157,6 +171,19 @@ ALTER SEQUENCE public.places_id_seq OWNER TO postgres;
 
 ALTER SEQUENCE public.places_id_seq OWNED BY public.places.id;
 
+
+--
+-- Name: player_totals; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.player_totals (
+    user_name text NOT NULL,
+    captured_count integer DEFAULT 0 NOT NULL,
+    updated_at timestamp without time zone DEFAULT now()
+);
+
+
+ALTER TABLE public.player_totals OWNER TO postgres;
 
 --
 -- Name: quizzes; Type: TABLE; Schema: public; Owner: postgres
@@ -710,7 +737,7 @@ COPY public.category_icons (category_id, icon_name) FROM stdin;
 COPY public.image_place (id, image_location, place_id, last_time_updated) FROM stdin;
 4	images/20250616_154848_photo_5327829827891361653_x.jpg	2	2025-06-16 15:48:48.866107
 5	images/20250616_154901_photo_5327829827891361653_x.jpg	4	2025-06-16 15:49:01.719316
-1	images/20250619_173551_Simulator Screenshot - iPhone 16 Pro - 2025-06-06 at 01.05.59.png	1	2025-06-19 17:35:51.804243
+1	images/20250619_202331_Screenshot 2025-06-17 at 11.32.03.png	1	2025-06-19 20:23:31.359303
 \.
 
 
@@ -719,6 +746,15 @@ COPY public.image_place (id, image_location, place_id, last_time_updated) FROM s
 --
 
 COPY public.mines (place_id, qid, expires_at) FROM stdin;
+1	question-uuid	2025-06-20 18:18:29.207128
+\.
+
+
+--
+-- Data for Name: place_cooldowns; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.place_cooldowns (place_id, user_name, cooldown_until) FROM stdin;
 \.
 
 
@@ -734,43 +770,60 @@ COPY public.place_scores (place_id, best_correct, best_time_ms, holder, updated_
 -- Data for Name: places; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
-COPY public.places (id, name, latitude, longitude, category_id, captured, user_captured) FROM stdin;
-2	Flamingo's Plaza Wokrestaurant	52.782527	6.8971	10008	f	\N
-3	Travellers Taste "Wildlands Adventure Zoo Emmen"	52.782307	6.890582	10056	f	\N
-4	Tweestryd	52.778517	6.887992	10001	f	\N
-6	Utopolis Emmen	52.788117	6.888345	10024	f	\N
-7	Emmen Raadhuisplein	52.782889	6.892564	16041	f	\N
-8	Jungola	52.782509	6.887649	10056	f	\N
-9	Aqua Mundo	52.67391	6.77455	18075	f	\N
-10	Mommeriete Bierbrouwerij	52.611335	6.67826	10037	f	\N
-11	Nationaal Monument Westerbork	52.916879	6.611729	16020	f	\N
-12	Herinneringscentrum Kamp Westerbork	52.921008	6.569726	10030	f	\N
-13	Aqua Mexicana	52.623961	6.561419	18075	f	\N
-14	Gold Rush	52.623899	6.561734	10001	f	\N
-15	Drents Museum	52.993341	6.56413	10030	f	\N
-16	Nationaal Park Dwingelderveld	52.783369	6.373425	16034	f	\N
-17	Beerze Bulten	52.511944	6.546296	16008	f	\N
-18	Zwembad Tropiqua	53.105562	6.867629	18075	f	\N
-19	Pier 99	52.435403	7.081435	13009	f	\N
-20	Tierpark Nordhorn	52.427683	7.092108	10056	f	\N
-21	Cafe Extrablatt Nordhorn BetriebsGmbH	52.434095	7.069768	13027	f	\N
-22	Nationaal Park Drents-Friese Wold	52.927235	6.302528	16034	f	\N
-23	Maallust Bierbrouwerij	53.033238	6.387525	13029	f	\N
-24	Recreatieplas De Zwarte Dennen	52.624082	6.273048	16003	f	\N
-25	Kino Papenburg	53.076176	7.404349	10024	f	\N
-26	Schouwburg Ogterop	52.692608	6.190523	10043	f	\N
-5	Rimbula River	52.781763	6.885543	10056	t	player1
-27	Test	52.78084378872667	6.910397750597617	1	f	\N
-28	Place 2	52.78	6.9	1	f	\N
-29	The kingdom of kingdoms	52.78	6.9	2	f	\N
-30	Test	52.78	6.9	9	f	\N
-31	123	52.78	6.9	1	f	\N
-32	Roundabout	52.77443236693949	6.9266169173208025	7	f	\N
-33	KIGDOM	52.78164658722868	6.938662737451782	2	f	\N
-34	Сральник	52.779696089101655	6.922779386251341	6	f	\N
-35	Test 	52.77269752118785	6.900077880431531	1	f	\N
-36	Test Place	52	5	1	f	\N
-1	Groothuis	52.789762	6.897665	13027	t	testuser1
+COPY public.places (id, name, latitude, longitude, category_id, captured, user_captured, captured_at) FROM stdin;
+3	Travellers Taste "Wildlands Adventure Zoo Emmen"	52.782307	6.890582	10056	f	\N	\N
+4	Tweestryd	52.778517	6.887992	10001	f	\N	\N
+6	Utopolis Emmen	52.788117	6.888345	10024	f	\N	\N
+7	Emmen Raadhuisplein	52.782889	6.892564	16041	f	\N	\N
+8	Jungola	52.782509	6.887649	10056	f	\N	\N
+9	Aqua Mundo	52.67391	6.77455	18075	f	\N	\N
+10	Mommeriete Bierbrouwerij	52.611335	6.67826	10037	f	\N	\N
+11	Nationaal Monument Westerbork	52.916879	6.611729	16020	f	\N	\N
+12	Herinneringscentrum Kamp Westerbork	52.921008	6.569726	10030	f	\N	\N
+13	Aqua Mexicana	52.623961	6.561419	18075	f	\N	\N
+14	Gold Rush	52.623899	6.561734	10001	f	\N	\N
+15	Drents Museum	52.993341	6.56413	10030	f	\N	\N
+16	Nationaal Park Dwingelderveld	52.783369	6.373425	16034	f	\N	\N
+17	Beerze Bulten	52.511944	6.546296	16008	f	\N	\N
+18	Zwembad Tropiqua	53.105562	6.867629	18075	f	\N	\N
+19	Pier 99	52.435403	7.081435	13009	f	\N	\N
+20	Tierpark Nordhorn	52.427683	7.092108	10056	f	\N	\N
+21	Cafe Extrablatt Nordhorn BetriebsGmbH	52.434095	7.069768	13027	f	\N	\N
+22	Nationaal Park Drents-Friese Wold	52.927235	6.302528	16034	f	\N	\N
+23	Maallust Bierbrouwerij	53.033238	6.387525	13029	f	\N	\N
+24	Recreatieplas De Zwarte Dennen	52.624082	6.273048	16003	f	\N	\N
+25	Kino Papenburg	53.076176	7.404349	10024	f	\N	\N
+26	Schouwburg Ogterop	52.692608	6.190523	10043	f	\N	\N
+5	Rimbula River	52.781763	6.885543	10056	t	player1	\N
+27	Test	52.78084378872667	6.910397750597617	1	f	\N	\N
+28	Place 2	52.78	6.9	1	f	\N	\N
+29	The kingdom of kingdoms	52.78	6.9	2	f	\N	\N
+30	Test	52.78	6.9	9	f	\N	\N
+31	123	52.78	6.9	1	f	\N	\N
+32	Roundabout	52.77443236693949	6.9266169173208025	7	f	\N	\N
+33	KIGDOM	52.78164658722868	6.938662737451782	2	f	\N	\N
+34	Сральник	52.779696089101655	6.922779386251341	6	f	\N	\N
+35	Test 	52.77269752118785	6.900077880431531	1	f	\N	\N
+36	Test Place	52	5	1	f	\N	\N
+37	Test Place	52	5	1	f	\N	\N
+38	Test Place	52	5	1	f	\N	\N
+39	Test Place2	52	5	1	f	\N	\N
+40	Test Place2	52	5	1	f	\N	\N
+2	Flamingo's Plaza Wokrestaurant	52.782527	6.8971	10008	t	test22	2025-06-19 17:06:08.856451
+41	Test Place2	52	5	1	f	\N	\N
+42	Test Place2	52	5	1	f	\N	\N
+1	Groothuis	52.789762	6.897665	13027	t	testuser	2025-06-19 18:18:22.557271
+43	Test Place2	52	5	1	f	\N	\N
+\.
+
+
+--
+-- Data for Name: player_totals; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.player_totals (user_name, captured_count, updated_at) FROM stdin;
+test	123	2025-06-19 17:26:58.577979
+testuser	2	2025-06-19 18:18:22.56002
 \.
 
 
@@ -798,6 +851,18 @@ a0b2f927-e494-4359-b757-810259cc531d	8	$2a$12$WWIxy9OURzBfdlXz722nGuyYB3EGbr431J
 9209850a-a36d-495e-ada4-b1e63fb5f038	8	$2a$12$72bZdAP7S5QeQ0uJhfW3ruxMISseh/./aHN.jMm5xFRmyG0DvVvJq	2025-06-26 18:10:34.066845	2025-06-19 16:10:34.067196	f
 b77e5fbb-448d-4146-a962-0251600c6ccc	8	$2a$12$vqAZo20XurLu5VszKlv6oeCiWf43S2hLUJ5dZKulzgIxkJkM6xQDa	2025-06-26 18:13:08.186863	2025-06-19 16:13:08.189159	f
 ecaf6a4d-cc88-4f01-8a63-625a5027a66f	8	$2a$12$inDaDeV6AMsSxR9oGPd6c.WtK4QXkrKjnHAyz2qB3BLoepXjOL.Ie	2025-06-26 18:14:05.34263	2025-06-19 16:14:05.343323	f
+0b5af74f-54f6-484a-99bb-a54263c9d369	9	$2a$12$D/BdNRjNfTFNMDGyFbkbduzXE8UWxIL4GT4d6NQbVAUYVz4vLoLFu	2025-06-26 18:34:24.137565	2025-06-19 16:34:24.139058	f
+e20cba10-3eef-48ee-a65f-6764bdfc49cb	9	$2a$12$MV1114JR7zaCa33x4zolbeXxRses2TS1GssdbcG0t/jr9li3selTu	2025-06-26 18:34:33.813267	2025-06-19 16:34:33.813565	f
+d61f6004-7e6d-42a8-b879-51c6d7a88554	9	$2a$12$Uc4SCs0P4TS6vhGhfK23eextTEk15lTd9YAzX5rQFl1krbsgQpC7G	2025-06-26 18:50:50.905934	2025-06-19 16:50:50.906567	f
+135a451e-c7cd-49d6-b028-f7b0d9386ad3	10	$2a$12$UeqLi3lYS5S8gPyrg9pWAuAUkb7QDZXS96aNQ2lbTo0PVPpgWoFgq	2025-06-26 18:50:58.388884	2025-06-19 16:50:58.389008	f
+db6d5e5d-8d16-4e98-a358-95809c00e2ac	9	$2a$12$V8EO66C/RBg34Vh7Hhzzye8gbk5Q3sWtI4ishvzbe5B2Gs5predqi	2025-06-26 19:21:12.990032	2025-06-19 17:21:12.990836	f
+b9a5e0af-3ad9-4a9f-895c-1daa74d74ecd	9	$2a$12$st4zB5kd4g9A2WXIl/aIBep07P4yeBxiE9lfcZ12RBy8QSb.3oLEW	2025-06-26 19:21:56.348778	2025-06-19 17:21:56.34895	f
+9e5e1ad0-60a9-41a0-b45a-4d06998b770d	9	$2a$12$a5/vdT9EwHlSLVzdjNAt3e6cfHg/E0X.6Uxrdz/fDKrjjgeRPcmnS	2025-06-26 19:29:30.734184	2025-06-19 17:29:30.734997	f
+c1ae2304-0ea4-4a48-a70b-02063c0c5439	9	$2a$12$V37nY59mLGYlX2g7VeVsSe.KD70JtrsZseT22/SPHSjGF6msH5twy	2025-06-26 19:50:08.817537	2025-06-19 17:50:08.818823	f
+153ad695-74fe-42a2-9662-90c3c8682f03	11	$2a$12$/DPO3emMOQrXfJOPGYin5eCxadLnGw/SVvWpoNe0JRaL28q6M1qEG	2025-06-26 20:17:40.467708	2025-06-19 18:17:40.468757	f
+b62dfcaa-577a-438f-9568-ef0da74829fb	9	$2a$12$bA5sXKNaBoz8dAwhw9Ti9eK0tTfwmKBVmB.GASv6BWDW/3iYQ91hS	2025-06-26 20:17:44.669027	2025-06-19 18:17:44.670272	f
+98be8aff-2916-4210-9ce7-27522aca2593	9	$2a$12$tskDW1YpEm9BMl55KbzLlOLlSWIoRxVN3XuZ6ncWLOk0SOc2v39Q.	2025-06-26 20:23:13.031187	2025-06-19 18:23:13.031648	f
+98f4e8f6-20c9-483a-9654-26d18dd275a7	12	$2a$12$LVXnNbsR.HPjqQ2.cuhZM.kbXsJoUdQzhmAniHeeSerVEHsshPNoK	2025-06-26 20:23:28.130552	2025-06-19 18:23:28.131197	f
 \.
 
 
@@ -812,6 +877,10 @@ COPY public.users (id, username, email, password_hash, created_at, updated_at, i
 6	testuser111	test@example111.com	$2a$12$c.3VRhgC8VdA0/O.88Ye2e1oOVbdTijIl0KqKk3NS5l3zSDSKymXi	2025-06-19 15:55:45.536723	2025-06-19 15:55:45.536723	t	\N	0	\N	
 7	test	test@gmail.com	$2a$12$cUFybJ8R19wpBWpXLF5w1.1pYZk7ysy277LhsKxMgLI9.TTBPYoQ2	2025-06-19 16:00:42.937581	2025-06-19 16:06:56.464212	t	2025-06-19 16:06:56.464212	0	\N	
 8	test2	test@gmail2.com	$2a$12$29gYRkZ7uIimYGe.lNzbgufLjK7OzUK4KsOLNofKwNLeaMFhccCnK	2025-06-19 16:10:29.242142	2025-06-19 16:14:05.155109	t	2025-06-19 16:14:05.155109	0	\N	
+10	test222	test@gmail222.com	$2a$12$6WFB8YM1hPoav7hf4msYreiqgsuPQvKn/ieGtRaBDNjZfhrqteLGu	2025-06-19 16:50:58.197946	2025-06-19 16:50:58.197946	t	\N	0	\N	
+11	test2222	test@gmail2222.com	$2a$12$TzsE0M4RlyaOHycwgix5cO84labXjX49E.OsR1kd.RhtHo2yzCWWu	2025-06-19 18:17:40.273841	2025-06-19 18:17:40.273841	t	\N	0	\N	
+9	test22	test@gmail22.com	$2a$12$7DCoPqfXPsAyDw70hwA4..O87wWxQBdv00DEjLxsU3bCi75m4gqYO	2025-06-19 16:34:23.949594	2025-06-19 18:23:12.844005	t	2025-06-19 18:23:12.844005	0	\N	
+12	test22222	test@gmail22222.com	$2a$12$Wd5Nv7.FqzQIboaPRKCBh.xGeWqGa6lfJvOWJvDm9JJolLiFg/PHS	2025-06-19 18:23:27.946722	2025-06-19 18:23:27.946722	t	\N	0	\N	
 \.
 
 
@@ -826,14 +895,14 @@ SELECT pg_catalog.setval('public.capture_attempts_id_seq', 1, false);
 -- Name: image_place_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.image_place_id_seq', 18, true);
+SELECT pg_catalog.setval('public.image_place_id_seq', 24, true);
 
 
 --
 -- Name: places_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.places_id_seq', 36, true);
+SELECT pg_catalog.setval('public.places_id_seq', 43, true);
 
 
 --
@@ -847,7 +916,7 @@ SELECT pg_catalog.setval('public.quizzes_id_seq', 1, true);
 -- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.users_id_seq', 8, true);
+SELECT pg_catalog.setval('public.users_id_seq', 12, true);
 
 
 --
@@ -875,11 +944,35 @@ ALTER TABLE ONLY public.image_place
 
 
 --
+-- Name: mines mines_place_id_qid_pk; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.mines
+    ADD CONSTRAINT mines_place_id_qid_pk PRIMARY KEY (place_id, qid);
+
+
+--
+-- Name: place_cooldowns place_cooldowns_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.place_cooldowns
+    ADD CONSTRAINT place_cooldowns_pkey PRIMARY KEY (place_id, user_name);
+
+
+--
 -- Name: places places_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.places
     ADD CONSTRAINT places_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: player_totals player_totals_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.player_totals
+    ADD CONSTRAINT player_totals_pkey PRIMARY KEY (user_name);
 
 
 --
@@ -964,6 +1057,14 @@ CREATE INDEX idx_users_username ON public.users USING btree (username);
 
 ALTER TABLE ONLY public.image_place
     ADD CONSTRAINT image_place_place_id_fkey FOREIGN KEY (place_id) REFERENCES public.places(id);
+
+
+--
+-- Name: place_cooldowns place_cooldowns_place_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.place_cooldowns
+    ADD CONSTRAINT place_cooldowns_place_id_fkey FOREIGN KEY (place_id) REFERENCES public.places(id) ON DELETE CASCADE;
 
 
 --

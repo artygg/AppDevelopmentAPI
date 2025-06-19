@@ -1,0 +1,299 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "AppDevelopmentAPI",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser\",\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": { "raw": "http://localhost:8080/auth/register", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["auth", "register"] }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": { "raw": "http://localhost:8080/auth/login", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["auth", "login"] }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"<refresh_token>\"\n}"
+            },
+            "url": { "raw": "http://localhost:8080/auth/refresh", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["auth", "refresh"] }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer <token>" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"<refresh_token>\"\n}"
+            },
+            "url": { "raw": "http://localhost:8080/auth/logout", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["auth", "logout"] }
+          }
+        },
+        {
+          "name": "Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer <token>" }
+            ],
+            "url": { "raw": "http://localhost:8080/auth/profile", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["auth", "profile"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Places & Quizzes",
+      "item": [
+        {
+          "name": "Get All Places",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "http://localhost:8080/places", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["places"] }
+          }
+        },
+        {
+          "name": "Get Quiz by Place ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:8080/quiz?place_id=1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["quiz"],
+              "query": [
+                { "key": "place_id", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Quiz by Place Name",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:8080/quiz?place=TestPlace",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["quiz"],
+              "query": [
+                { "key": "place", "value": "TestPlace" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Place",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer <token>" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Place\",\n  \"latitude\": 52.0,\n  \"longitude\": 5.0,\n  \"category_id\": 1\n}"
+            },
+            "url": { "raw": "http://localhost:8080/api/places", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "places"] }
+          }
+        },
+        {
+          "name": "Capture Place",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer <token>" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"place_id\": 1,\n  \"user\": \"testuser\",\n  \"passed\": true\n}"
+            },
+            "url": { "raw": "http://localhost:8080/api/capture", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "capture"] }
+          }
+        },
+        {
+          "name": "Place Mine",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer <token>" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"place_id\": 1,\n  \"qid\": \"question-uuid\"\n}"
+            },
+            "url": { "raw": "http://localhost:8080/api/mine", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "mine"] }
+          }
+        },
+        {
+          "name": "Finish Quiz",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer <token>" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"place_id\": 1,\n  \"user\": \"testuser\",\n  \"correct\": 5,\n  \"elapsed_ms\": 12345\n}"
+            },
+            "url": { "raw": "http://localhost:8080/api/finish", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "finish"] }
+          }
+        },
+        {
+          "name": "Get Captured Places",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer <token>" }
+            ],
+            "url": { "raw": "http://localhost:8080/api/captured_places", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "captured_places"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Icons & Leaderboard",
+      "item": [
+        {
+          "name": "Get Icon by Category ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:8080/icon?category_id=1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["icon"],
+              "query": [
+                { "key": "category_id", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get All Category Icons",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "http://localhost:8080/category_icons.json", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["category_icons.json"] }
+          }
+        },
+        {
+          "name": "Get Leaderboard",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:8080/leaderboard?limit=10",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["leaderboard"],
+              "query": [
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Images",
+      "item": [
+        {
+          "name": "Upload Image",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "multipart/form-data" }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "" },
+                { "key": "place_id", "type": "text", "value": "1" }
+              ]
+            },
+            "url": { "raw": "http://localhost:8080/upload-file", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["upload-file"] }
+          }
+        },
+        {
+          "name": "Get Image by Place ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "http://localhost:8080/get-image?place_id=1",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8080",
+              "path": ["get-image"],
+              "query": [
+                { "key": "place_id", "value": "1" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get All Profile Images",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "http://localhost:8080/api/profile_images", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "profile_images"] }
+          }
+        },
+        {
+          "name": "Update User Map Image",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer <token>" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"image_url\": \"http://example.com/image.jpg\"\n}"
+            },
+            "url": { "raw": "http://localhost:8080/api/user/map_image", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "user", "map_image"] }
+          }
+        }
+      ]
+    }
+  ]
+} 

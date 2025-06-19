@@ -63,8 +63,26 @@ func (g QuizGen) Generate(name string, lat, lon float64) ([]models.Question, err
 }
 
 func generatePrompt(name string, lat, lon float64) string {
-    return fmt.Sprintf(
-        `Generate 7 JSON questions (array) about "%s" (%.5f,%.5f). Each item must be {"text":...,"options":[4],"answer":number}. No markdown.`,
-        name, lat, lon,
-    )
+    return fmt.Sprintf(`
+    You are an expert trivia creator.
+
+    Create a *pure JSON array* of **7** multiple-choice questions about the place **%q** located at coordinates **%.5f, %.5f** *and* about the country in which this place is found.
+
+    Rules:
+    - At least **3** questions must relate directly to the place itself (landmarks, history, facts, events).
+    - The remaining questions must relate to the country (culture, language, geography, famous people, etc.) while still being recognisably connected to the place.
+    - Difficulty: easy-to-medium, suitable for a general audience.
+    - Use only present-day, factual information.
+
+    Output format for each question (exactly these keys, no extras, in this order):
+    {
+      "text":    string   – the question,
+      "options": [string] – exactly 4 distinct answer strings,
+      "answer":  number   – 0-based index of the correct option
+    }
+
+    Additional constraints:
+    - No numbering or bullet characters in “text”.
+    - “options” must be capitalised sentence-style; avoid duplicates.
+    - Do **not** include explanations, comments, markdown, or code fences—return only the JSON array.`, name, lat, lon)
 }

@@ -1,8 +1,10 @@
+// main.go – Enhanced version with secure authentication
+
 package main
 
 import (
 	_ "AppDevelopmentAPI/internal/db"
-	"AppDevelopmentAPI/internal/handlers"
+	//"AppDevelopmentAPI/internal/handlers"
 	"AppDevelopmentAPI/websocket"
 	"bytes"
 	"crypto/rand"
@@ -1010,8 +1012,8 @@ func refreshTokenHandler(db *sql.DB) http.HandlerFunc {
 			http.Error(w, "Failed to create refresh token", http.StatusInternalServerError)
 			return
 		}
-
 		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(AuthResponse{
 			User:         user,
 			Token:        token,
@@ -1352,7 +1354,7 @@ func main() {
 
 	key := os.Getenv("OPENAI_API_KEY")
 
-	h := handlers.New(db, os.Getenv("OPENAI_API_KEY"))
+	//h := handlers.New(db, os.Getenv("OPENAI_API_KEY"))
 
 	// Auth routes
 	http.HandleFunc("/auth/register", registerHandler(db))
@@ -1366,7 +1368,6 @@ func main() {
 	http.HandleFunc("/quiz", quizHandler(db, key))
 	http.HandleFunc("/icon", iconLookupHandler(db))
 	http.HandleFunc("/category_icons.json", categoryIconsHandler(db))
-	mux := http.NewServeMux()
 
 	// Protected routes
 	http.HandleFunc("/api/places", createPlaceHandler(db))
@@ -1377,30 +1378,11 @@ func main() {
 
 	// Image routes
 	http.HandleFunc("/upload-file", UploadImageHandler(db))
-	http.HandleFunc("/get-image", GetImageByPlaceIDHandler(db))
-	http.HandleFunc("/api/profile_images", getAllProfileImagesHandler(db)) // GET - fetch all profile images
-	http.HandleFunc("/api/user/map_image", updateUserMapImageHandler(db))
-	mux.HandleFunc("/places", h.Places)
-	mux.HandleFunc("/quiz", h.Quiz)
-	mux.HandleFunc("/icon", h.IconLookup)
-	mux.HandleFunc("/category_icons.json", h.CategoryIcons)
-	mux.HandleFunc("/leaderboard", h.Leaderboard) // ← добавили
+	http.HandleFunc("/get-image", UploadImageHandler(db))
 
 	// WebSocket
 	go websocket.HandleMessages()
 	http.HandleFunc("/ws", websocket.WebSocketHandler)
-	// API
-	mux.HandleFunc("/api/places", h.CreatePlace)
-	mux.HandleFunc("/api/capture", h.Capture)
-	mux.HandleFunc("/api/mine", h.Mine)
-	mux.HandleFunc("/api/finish", h.Finish)
-
-	mux.HandleFunc("/upload-file", h.UploadImage)
-	mux.HandleFunc("/get-image", h.GetImage)
-
-	// WebSocket
-	go websocket.HandleMessages()
-	mux.HandleFunc("/ws", websocket.WebSocketHandler)
 
 	// Static files
 	http.Handle("/", http.FileServer(http.Dir(".")))

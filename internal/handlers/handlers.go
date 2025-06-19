@@ -9,6 +9,7 @@ import (
 type Handler struct {
 	DB   *sql.DB
 	QGen services.QuizGen
+
 }
 
 func New(db *sql.DB, key string) *Handler {

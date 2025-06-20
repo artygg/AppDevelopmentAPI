@@ -931,12 +931,14 @@ func main() {
 	mux.HandleFunc("/icon", corsMiddleware(h.IconLookup))
 	mux.HandleFunc("/category_icons.json", corsMiddleware(h.CategoryIcons))
 	mux.HandleFunc("/leaderboard", h.Leaderboard)
+	mux.HandleFunc("/api/places", corsMiddleware(h.CreatePlace))
 
 	// Protected routes
 	mux.HandleFunc("/api/places", corsMiddleware(h.CreatePlace))
 	mux.HandleFunc("/api/capture", corsMiddleware(h.Capture))
 	mux.HandleFunc("/api/mine", corsMiddleware(h.Mine))
 	mux.HandleFunc("/api/finish", corsMiddleware(h.Finish))
+
 	mux.HandleFunc("/api/captured_places", capturedPlacesHandler(db))
 
 	// Image routes

@@ -338,12 +338,6 @@ func initDB(db *sql.DB) {
 	db.Exec(`CREATE INDEX IF NOT EXISTS idx_refresh_tokens_expires_at ON refresh_tokens(expires_at)`)
 }
 
-func sendUpdate(u UpdateMessage) {
-	if b, err := json.Marshal(u); err == nil {
-		websocket.Broadcast <- b
-	}
-}
-
 /* ─────────────────────────  AUTH CRUD HELPERS  ─────────────────────── */
 
 func getUserByUsername(db *sql.DB, username string) (*User, error) {
@@ -939,10 +933,10 @@ func main() {
 	mux.HandleFunc("/leaderboard", h.Leaderboard)
 
 	// Protected routes
-	mux.HandleFunc("/api/places", corsMiddleware(authMiddleware(h.CreatePlace)))
-	mux.HandleFunc("/api/capture", corsMiddleware(authMiddleware(h.Capture)))
-	mux.HandleFunc("/api/mine", corsMiddleware(authMiddleware(h.Mine)))
-	mux.HandleFunc("/api/finish", corsMiddleware(authMiddleware(h.Finish)))
+	mux.HandleFunc("/api/places", corsMiddleware(h.CreatePlace))
+	mux.HandleFunc("/api/capture", corsMiddleware(h.Capture))
+	mux.HandleFunc("/api/mine", corsMiddleware(h.Mine))
+	mux.HandleFunc("/api/finish", corsMiddleware(h.Finish))
 	mux.HandleFunc("/api/captured_places", capturedPlacesHandler(db))
 
 	// Image routes

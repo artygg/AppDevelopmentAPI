@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"AppDevelopmentAPI/internal/models"
+	"AppDevelopmentAPI/internal/services"
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 )
 
 type captureReq struct {
@@ -46,6 +48,19 @@ func (h *Handler) Capture(w http.ResponseWriter, r *http.Request) {
                    WHERE place_id = $1 AND user_name = $2`,
 			req.PlaceID, req.User)
 		_ = models.IncCaptured(h.DB, req.User)
+
+		// Send update after successful capture
+		place, _ := models.GetByID(h.DB, req.PlaceID)
+		if place != nil {
+			update := models.Update{
+				Status:    "captured",
+				Time:      time.Now().Format(time.RFC3339),
+				Source:    req.User,
+				PlaceID:   place.ID,
+				PlaceName: place.Name,
+			}
+			services.SendUpdate(update)
+		}
 	} else {
 		_, err := h.DB.Exec(`
             INSERT INTO place_cooldowns(place_id, user_name, cooldown_until)

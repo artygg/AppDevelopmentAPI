@@ -937,9 +937,9 @@ func main() {
 	mux.HandleFunc("/icon", corsMiddleware(h.IconLookup))
 	mux.HandleFunc("/category_icons.json", corsMiddleware(h.CategoryIcons))
 	mux.HandleFunc("/leaderboard", h.Leaderboard)
+	mux.HandleFunc("/api/places", corsMiddleware(h.CreatePlace))
 
 	// Protected routes
-	mux.HandleFunc("/api/places", corsMiddleware(authMiddleware(h.CreatePlace)))
 	mux.HandleFunc("/api/capture", corsMiddleware(authMiddleware(h.Capture)))
 	mux.HandleFunc("/api/mine", corsMiddleware(authMiddleware(h.Mine)))
 	mux.HandleFunc("/api/finish", corsMiddleware(authMiddleware(h.Finish)))

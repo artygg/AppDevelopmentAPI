@@ -10,6 +10,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/golang-jwt/jwt/v5"
 	"log"
 	"net/http"
 	"os"
@@ -20,7 +21,7 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/golang-jwt/jwt/v5"
+	_ "github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -31,17 +32,18 @@ import (
 /* ────────────────────────────  DATA STRUCTURES  ──────────────────────────── */
 
 type Place struct {
-	ID           int     `json:"id"`
-	Name         string  `json:"name"`
-	Latitude     float64 `json:"latitude"`
-	Longitude    float64 `json:"longitude"`
-	CategoryID   int     `json:"category_id"`
-	Captured     bool    `json:"captured"`
-	UserCaptured *string `json:"user_captured"`
+	ID           int        `json:"id"`
+	Name         string     `json:"name"`
+	Latitude     float64    `json:"latitude"`
+	Longitude    float64    `json:"longitude"`
+	CategoryID   int        `json:"category_id"`
+	Captured     bool       `json:"captured"`
+	UserCaptured *string    `json:"user_captured,omitempty"`
+	Cooldown     *time.Time `json:"cooldown_until,omitempty"`
 }
 
 type Question struct {
-	ID        string   `json:"id"` // uuid
+	ID        string   `json:"id"`
 	Text      string   `json:"text"`
 	Options   []string `json:"options"`
 	Answer    int      `json:"answer"`
@@ -60,6 +62,12 @@ type UpdateMessage struct {
 	Source    string `json:"source"`
 	PlaceID   int    `json:"place_id,omitempty"`
 	PlaceName string `json:"place_name,omitempty"`
+}
+
+type Leader struct {
+	User  string `json:"user"`
+	Score int    `json:"captured"`
+	Rank  int    `json:"rank"`
 }
 
 type User struct {
@@ -826,7 +834,7 @@ func registerHandler(db *sql.DB) http.HandlerFunc {
 		}
 
 		if _, err := getUserByEmail(db, req.Email); err == nil {
-			http.Error(w, "Email already exists", http.StatusConflict)
+			http.Error(w, err.Error(), http.StatusConflict)
 			return
 		}
 
@@ -1376,7 +1384,7 @@ func main() {
 	// Image routes
 	http.HandleFunc("/upload-file", UploadImageHandler(db))
 	http.HandleFunc("/get-image", GetImageByPlaceIDHandler(db))
-	http.HandleFunc("/api/profile_images", getAllProfileImagesHandler(db)) // GET - fetch all profile images
+	http.HandleFunc("/api/profile_images", getAllProfileImagesHandler(db))
 	http.HandleFunc("/api/user/map_image", updateUserMapImageHandler(db))
 
 	// WebSocket

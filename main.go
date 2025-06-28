@@ -935,8 +935,8 @@ func main() {
 	// Protected routes
 	mux.HandleFunc("/api/places", corsMiddleware(h.CreatePlace))
 	mux.HandleFunc("/api/capture", corsMiddleware(h.Capture))
-	mux.HandleFunc("/api/mine", corsMiddleware(h.Mine))
 	mux.HandleFunc("/api/finish", corsMiddleware(h.Finish))
+	//  GET → current balance
 
 	mux.HandleFunc("/api/captured_places", capturedPlacesHandler(db))
 
@@ -950,6 +950,11 @@ func main() {
 
 	// Static files
 	mux.Handle("/", http.FileServer(http.Dir(".")))
+
+	//mines
+	mux.HandleFunc("/api/mines", corsMiddleware(h.GetMineBalance))
+	mux.HandleFunc("/api/mine", corsMiddleware(h.Mine))
+	mux.HandleFunc("/api/mines/list", corsMiddleware(h.ListMines))
 
 	log.Println("API listening on :8080")
 	log.Println("Authentication endpoints available:")
